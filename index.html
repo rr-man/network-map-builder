@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Network Topology Map — v4.0.0</title>
+<title>Network Topology Map — v6.0.0</title>
 <style>
   :root, body[data-theme="dark"]{
     --bg:#0f1b30;               /* deep Coeo navy */
@@ -78,7 +78,49 @@
   .ver{
     font-family:var(--mono);font-size:11px;color:var(--muted);
     border:1px solid var(--panel-edge);border-radius:4px;padding:2px 8px;
+    cursor:pointer;user-select:none;
   }
+  .ver:hover{color:var(--ink);border-color:var(--brand)}
+  .ver:focus{outline:none;border-color:var(--brand)}
+
+  /* ── changelog modal ── */
+  #clOverlay{
+    position:fixed;inset:0;display:none;z-index:60;
+    background:rgba(6,12,24,.72);align-items:center;justify-content:center;
+  }
+  #clOverlay.open{display:flex}
+  #clModal{
+    width:min(680px,92vw);max-height:82vh;display:flex;flex-direction:column;
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:12px;
+    box-shadow:0 18px 60px rgba(0,0,0,.5);
+  }
+  #clHead{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;border-bottom:1px solid var(--panel-edge);
+  }
+  #clHead h2{margin:0;font-size:15px;color:var(--ink)}
+  #clHead .sub{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+  #clClose{
+    cursor:pointer;background:none;border:1px solid var(--panel-edge);border-radius:6px;
+    color:var(--muted);font-size:14px;padding:4px 10px;font-family:var(--mono);
+  }
+  #clClose:hover{color:var(--ink);border-color:var(--muted)}
+  #clBody{overflow-y:auto;padding:6px 20px 18px;font-size:12.5px;line-height:1.65;color:var(--muted)}
+  #clBody .cl-ver{
+    display:flex;align-items:baseline;gap:10px;margin:18px 0 6px;
+    padding-top:12px;border-top:1px solid var(--panel-edge);
+  }
+  #clBody .cl-ver:first-child{border-top:none;padding-top:4px}
+  #clBody .cl-ver b{color:var(--ink);font-size:13.5px;font-family:var(--mono)}
+  #clBody .cl-ver .d{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+  #clBody .cl-ver .cur{
+    font-family:var(--mono);font-size:9px;color:var(--bg);background:var(--hl);
+    border-radius:4px;padding:1px 6px;font-weight:700;
+  }
+  #clBody h4{margin:8px 0 2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--link-inf)}
+  #clBody ul{margin:2px 0 4px;padding-left:20px}
+  #clBody li{margin:3px 0}
+  #clBody strong{color:var(--ink)}
   .btn{
     font-family:var(--mono);font-size:11.5px;padding:7px 12px;cursor:pointer;
     background:var(--panel);border:1px solid var(--panel-edge);border-radius:6px;
@@ -86,6 +128,58 @@
   }
   .btn:hover{border-color:var(--muted)}
   .btn.primary{border-color:var(--brand)}
+  .btn.menu-open{border-color:var(--hl);color:var(--hl)}
+  /* Advanced button stands out from the plain toolbar buttons */
+  #advBtn{
+    background:linear-gradient(180deg,#7b4fd9,#5a34ad);
+    border-color:#9b78ee;color:#fff;font-weight:700;
+    box-shadow:0 0 0 1px rgba(155,120,238,.35), 0 2px 10px rgba(123,79,217,.35);
+  }
+  #advBtn:hover{filter:brightness(1.12);border-color:#c4aef7}
+  #viewBtn{
+    background:linear-gradient(180deg,#2f8f86,#1f6b64);
+    border-color:#57bdb1;color:#fff;font-weight:700;
+    box-shadow:0 0 0 1px rgba(87,189,177,.35), 0 2px 10px rgba(47,143,134,.32);
+  }
+  #viewBtn:hover{filter:brightness(1.12);border-color:#8fdcd2}
+  #viewBtn.menu-open{border-color:var(--hl);color:#fff}
+  .dd-site{display:flex;gap:8px;padding:4px 10px 8px;flex-wrap:wrap}
+  .dd-sitebtn{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:5px;cursor:pointer;
+    background:transparent;border:1px solid var(--panel-edge);color:var(--muted)}
+  .dd-sitebtn.on{border-color:var(--c-switch);color:var(--ink);background:rgba(79,195,217,.14)}
+  #advBtn.primary{background:linear-gradient(180deg,#8f5ff0,#6a3ec6)}
+  #advBtn.menu-open{border-color:var(--hl);color:#fff}
+
+  /* ── toolbar dropdown menus (Advanced / Download) ── */
+  .menu-wrap{position:relative;display:inline-block}
+  .dropdown{
+    position:absolute;top:calc(100% + 7px);left:0;z-index:40;min-width:300px;max-height:70vh;overflow-y:auto;
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:10px;
+    box-shadow:0 14px 40px rgba(0,0,0,.5);padding:6px;display:none;text-align:left;
+  }
+  .dropdown.open{display:block}
+  .dropdown.right{left:auto;right:0}
+  .dd-head{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);padding:8px 10px 4px}
+  .dd-sep{height:1px;background:var(--panel-edge);margin:5px 4px}
+  .dd-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer}
+  .dd-item:hover{background:rgba(65,107,169,.18)}
+  .dd-ico{font-family:var(--mono);font-size:13px;color:var(--link-inf);width:18px;text-align:center;flex:none;margin-top:1px}
+  .dd-t{font-size:12.5px;font-weight:600;display:block;color:var(--ink)}
+  .dd-d{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-top:2px;line-height:1.45;display:block}
+  /* checkbox rows */
+  .dd-cb{display:flex;align-items:flex-start;gap:9px;padding:6px 10px;border-radius:6px;cursor:pointer}
+  .dd-cb:hover{background:rgba(65,107,169,.15)}
+  .dd-chk{
+    width:15px;height:15px;flex:none;margin:2px 0 0;cursor:pointer;
+    accent-color:var(--c-switch);
+  }
+  .dd-lbl{font-size:12px;display:block;color:var(--ink)}
+  .dd-sub{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:1px;line-height:1.4;display:block}
+  .dd-actions{display:flex;gap:8px;padding:6px 10px 8px}
+  .dd-mini{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:5px;cursor:pointer;
+    background:transparent;border:1px solid var(--panel-edge);color:var(--muted)}
+  .dd-mini:hover{color:var(--ink);border-color:var(--muted)}
 
   /* toolbar select (spacing dropdown) */
   .sel-wrap{display:inline-flex;align-items:center;gap:6px;position:relative}
@@ -233,6 +327,15 @@
     stroke:var(--link-inf);stroke-width:1.5;fill:none;
     stroke-dasharray:2 5;stroke-linecap:round;opacity:.9;
   }
+  /* ── tunnel overlay ── */
+  .edge-tunnel{
+    stroke:var(--c-sdwan);stroke-width:1.5;fill:none;
+    stroke-dasharray:6 4;opacity:.62;
+  }
+  .edge-tunnel-ext{stroke:var(--hl);stroke-dasharray:6 4;stroke-width:1.4;fill:none;opacity:.7}
+  .edge-tunnel-bus{stroke:var(--c-sdwan);stroke-width:2.2;fill:none;opacity:.5;stroke-linecap:round}
+  .edge-tunnel-missing{stroke:var(--c-unknown);stroke-width:1.6;fill:none;stroke-dasharray:2 6;opacity:.95}
+  .ctrl-node rect{fill:var(--panel);stroke:var(--c-sdwan);stroke-width:1.5;stroke-dasharray:4 3}
   .edge-inferred.edge-xconn-solid{
     stroke-dasharray:none;stroke-width:2;opacity:1;   /* confirmed physical cable */
   }
@@ -273,14 +376,51 @@
     display:none;flex-direction:column;gap:6px;box-shadow:0 4px 16px var(--shadow);
   }
   #legend.show{display:flex}
-  #legend .li{display:flex;align-items:center;gap:8px;color:var(--muted)}
+  #legend.show{display:flex}
+  #legend{max-height:calc(100vh - 190px);overflow-y:auto}
+  #legend .li{display:flex;align-items:center;gap:8px;color:var(--muted);line-height:1.35}
+  #legend .lg-sec{
+    font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);
+    margin:5px 0 1px;padding-top:5px;border-top:1px solid var(--panel-edge);
+  }
+  #legend .lg-sec:first-child{margin-top:0;padding-top:0;border-top:none}
+  #legend .lg-hd{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+    cursor:pointer;user-select:none;
+  }
+  #legend .lg-hd:hover{color:var(--ink)}
+  #legend.collapsed .lg-body{display:none}
+  #legend .lg-body{display:flex;flex-direction:column;gap:5px;margin-top:7px}
+  #legend .note{font-size:9.5px;color:var(--faint);max-width:206px;line-height:1.45}
+  #legend .sw.derived{background:transparent;border:1.5px dashed var(--muted)}
+  #legend .ln.tun{border-top:2px dashed var(--c-sdwan)}
+  #legend .ln.tunext{border-top:2px dashed var(--hl)}
+  #legend .ln.tunmiss{border-top:2px dotted var(--c-unknown)}
+  #legend .ln.bus{border-top:3px solid var(--c-sdwan);opacity:.55}
+  #legend .bdg{
+    font-family:var(--mono);font-size:7.5px;font-weight:700;color:#fff;
+    border-radius:3px;padding:1px 5px;flex:none;
+  }
+  #legend .arw{
+    font-family:var(--mono);font-size:10px;color:var(--ink);width:22px;
+    text-align:center;flex:none;
+  }
+  #legend .band{
+    width:22px;height:11px;border-radius:3px;flex:none;
+    border:1px dashed var(--panel-edge);background:color-mix(in srgb,var(--c-sdwan) 12%,transparent);
+  }
 
   /* ── WAN overview panel ─────────────────── */
   #wanPanel{
-    position:absolute;right:16px;top:40px;max-width:min(560px,86vw);
+    /* lower right — mirrors the legend in the lower left. Width is capped so it
+       cannot reach across and cover the legend on a narrow window. */
+    position:absolute;right:16px;bottom:14px;
+    max-width:min(560px, calc(100vw - 300px));
     background:var(--panel);border:1px solid var(--panel-edge);
     border-radius:8px;padding:12px 14px;display:none;
-    box-shadow:0 6px 22px var(--shadow);z-index:3;overflow:auto;max-height:60vh;
+    box-shadow:0 6px 22px var(--shadow);z-index:3;overflow:auto;
+    max-height:min(60vh, calc(100vh - 200px));
   }
   #wanPanel.show{display:block}
   #wanPanel h3{
@@ -396,18 +536,25 @@
   }
 </style>
 </head>
-<body data-theme="dark">
+<body data-theme="light">
 
 <header>
   <img class="logo dark" alt="Coeo" src="data:image/png;base64,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"><img class="logo light" alt="Coeo" src="data:image/png;base64,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">
   <h1>Network Topology <span class="dim">/ Config-Derived Map</span></h1>
-  <span class="ver">v4.0.0</span>
+  <span class="ver" id="verBtn" data-tip="View the full changelog — every release and what changed." role="button" tabindex="0">v6.0.0</span>
   <button class="btn primary" id="uploadBtn">⇪ Upload data</button>
   <button class="btn" id="newSiteBtn" title="Stamp out a standard site from the template (cloud → router → SD-WAN → switch → APs/endpoints)">＋ New site</button>
   <button class="btn" id="sampleBtn">Load sample</button>
   <button class="btn" id="clearBtn">Clear</button>
   <button class="btn" id="inferBtn" data-tip="Show or hide links the tool inferred from config evidence (dotted). Solid links come from declared uplinks or unique gateway/CDP matches; dotted ones are best-guess and toggle off here.">Inferred links: ON</button>
-  <button class="btn" id="advBtn" data-tip="Advanced view. Shows the physical port at each end of every link — the interface name (and its description/speed) where one device plugs into the next, like a cabling diagram. Off by default to keep the map clean.">Advanced: OFF</button>
+  <span class="menu-wrap">
+    <button class="btn" id="viewBtn" aria-haspopup="true" aria-expanded="false" data-tip="Choose how multiple locations are laid out. Site columns is the default: one column per location with the tier rows aligned.">View ▾</button>
+    <div class="dropdown" id="viewMenu" role="menu"></div>
+  </span>
+  <span class="menu-wrap">
+    <button class="btn" id="advBtn" aria-haspopup="true" aria-expanded="false" data-tip="Advanced view. Pick exactly which extra detail to show — port map, link detail, VLANs, vendor/location, and more. All unticked = the clean simple view.">Advanced ▾</button>
+    <div class="dropdown" id="advMenu" role="menu"></div>
+  </span>
   <label class="sel-wrap" data-tip="Vertical spacing between tiers. Tight is most compact; Airy and Spacious add breathing room for presentations; Adaptive stays compact but expands only rows whose links carry port labels.">
     <span class="sel-lbl">Spacing</span>
     <select id="spacingSel" class="sel">
@@ -418,9 +565,18 @@
       <option value="adaptive">Adaptive</option>
     </select>
   </label>
-  <button class="btn" id="wanBtn" data-tip="WAN-side overview. Opens a table of every device's internet-facing side — circuit names, WAN IPs, gateways, NAT and any SLA the config exposed — so you can see how the site reaches the internet without clicking each node.">☁ WAN side</button>
-  <button class="btn" id="pdfBtn" data-tip="Download the diagram as a vector PDF. The topology is embedded as SVG, so it stays crisp at any zoom or print size — no pixelation.">⤓ PDF (vector)</button>
-  <button class="btn" id="exportBtn" data-tip="Download the current topology as JSON — including auto-established links, the derived INTERNET node, and any manual type/uplink overrides. Re-load this file later to restore the diagram exactly, no re-parsing.">⤓ Export JSON</button>
+  <button class="btn" id="wanBtn" data-tip="WAN details. Opens a table of every device's internet-facing side — circuit names, WAN IPs, gateways, NAT and any SLA the config exposed — so you can see how the site reaches the internet without clicking each node.">☁ WAN details</button>
+  <span class="menu-wrap">
+    <button class="btn primary" id="dlBtn" aria-haspopup="true" aria-expanded="false" data-tip="Download the diagram — vector PDF, PNG image, a self-contained interactive HTML copy, or the raw topology JSON.">⤓ Download ▾</button>
+    <div class="dropdown right" id="dlMenu" role="menu">
+      <div class="dd-head">Download</div>
+      <div class="dd-item" id="dlPdf"><span class="dd-ico">▤</span><span><span class="dd-t">PDF — vector</span><span class="dd-d">true vector, crisp at any zoom; auto page size</span></span></div>
+      <div class="dd-item" id="dlPng"><span class="dd-ico">▣</span><span><span class="dd-t">Image — PNG</span><span class="dd-d">flattened raster at 2× for slides &amp; tickets</span></span></div>
+      <div class="dd-item" id="dlHtml"><span class="dd-ico">◈</span><span><span class="dd-t">Interactive HTML</span><span class="dd-d">self-contained copy, topology baked in, opens offline</span></span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" id="dlJson"><span class="dd-ico">{ }</span><span><span class="dd-t">Topology JSON</span><span class="dd-d">re-loadable data</span></span></div>
+    </div>
+  </span>
   <button class="btn" id="themeBtn" data-tip="Toggle dark / light theme">☀</button>
   <input type="file" id="fileInput" accept=".json,.txt,.cfg,.conf,.config,.log,.ios,.run,application/json,text/plain" multiple hidden>
   <div class="search-wrap" data-tip="Filter the diagram by hostname, IP address, or MAC. Matching devices highlight and the rest dim — useful for answering 'which device owns this IP?'. Matches parsed values (mgmt/interface IPs, gateways), not endpoint IPs that aren't in the configs.">
@@ -461,6 +617,15 @@
   <aside id="panel" aria-label="Device details"></aside>
 </main>
 
+<div id="clOverlay" role="dialog" aria-modal="true" aria-label="Changelog">
+  <div id="clModal">
+    <div id="clHead">
+      <div><h2>Changelog</h2><div class="sub">Network Topology Visualizer — every release, embedded &amp; offline</div></div>
+      <button id="clClose" aria-label="Close">✕ close</button>
+    </div>
+    <div id="clBody"></div>
+  </div>
+</div>
 <footer id="credits"><span class="credit"><span class="lbl">Created by</span>&nbsp;<a href="https://www.linkedin.com/in/ronmangune/" target="_blank" rel="noopener"><svg class="li-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.59 0 4.26 2.37 4.26 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.55V9h3.57v11.45z"/></svg>Ron&nbsp;Mangune</a></span><span class="dot">·</span><span class="credit"><span class="lbl">Contributor</span>&nbsp;<a href="https://www.linkedin.com/in/joey-c-a68a846a/" target="_blank" rel="noopener"><svg class="li-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.59 0 4.26 2.37 4.26 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.55V9h3.57v11.45z"/></svg>Joey&nbsp;Cassillas</a></span></footer>
 
 <script>
@@ -568,33 +733,444 @@ function portVlanColor(p){
 /* Build consolidated port chips: runs of adjacent ports with the same
    description+vlan collapse into one chip ("gi1-9  POS ×9"). Trunks stay
    individual and get a direction arrow. Empty ports collapse to one chip. */
+/* ── per-chip Advanced extras (only from what the config states) ── */
+function chipStateColor(c){
+  const s = String(c.state || "").toLowerCase();
+  if(!s) return null;
+  if(/err-?dis|down|shut/.test(s))  return "var(--c-unknown)";
+  if(/standby|monitor/.test(s))     return "var(--hl)";
+  if(/up/.test(s))                  return "var(--c-ap)";
+  return null;
+}
+function chipSpeedDuplex(c){
+  const sp = c.speed || "", dx = c.duplex || "";
+  if(!sp && !dx) return "";
+  return [sp, dx].filter(Boolean).join("/");
+}
+function chipPoe(c){
+  const m = String(c.state||"").match(/PoE\s*([\d.]+\s*W)/i);
+  return m ? m[1].replace(/\s+/g,"") : "";
+}
+/* ══ MULTI-SITE ═══════════════════════════════════════════════════
+   Sites are derived from what the configs state, never invented:
+     1. an explicit "! topo-site: NAME" directive always wins
+     2. the physical location string (Versa `snmp system location`) —
+        this is what correctly groups an HA pair (PRI + BCK share an
+        address, so they are ONE site, not two)
+     3. otherwise, the hostname is scanned for a site label already
+        discovered from step 2
+   Devices with no evidence land in a single "UNGROUPED" site.        */
+const SITE_NONE = "\u0000none";
+function siteTokenFromHost(h){
+  let t = String(h||"").toUpperCase();
+  t = t.replace(/^(SDWB|SDW|SW-STK|SWSTK|SW|RTR|FW)[-_]?/,"");   // device-role prefix
+  t = t.replace(/[-_](PRI|PRIMARY|BCK|BACKUP|SEC|SECONDARY)\b.*$/,"");  // HA suffix
+  t = t.replace(/[-_]\d+$/,"");                                   // -01 / -02
+  const parts = t.split(/[-_]/).filter(Boolean);
+  return parts.length ? parts[parts.length-1] : "";
+}
+function computeSites(){
+  /* pass 1 — directive or location */
+  const byLoc = {};
+  devices.forEach(d=>{
+    d._site = null;
+    if(d.derived) return;
+    if(d.topoSite){ d._site = String(d.topoSite).toUpperCase(); return; }
+    if(d.location){
+      const key = String(d.location).trim().toUpperCase();
+      byLoc[key] = byLoc[key] || { label: siteTokenFromHost(d.hostname) || key.split(",")[0], location: d.location, ids: [] };
+      d._site = byLoc[key].label;
+      byLoc[key].ids.push(d.id);
+    }
+  });
+  /* pass 2 — hostname contains a label discovered above */
+  const labels = [...new Set(devices.filter(d=>d._site).map(d=>d._site))];
+  devices.forEach(d=>{
+    if(d._site || d.derived) return;
+    const H = String(d.hostname||"").toUpperCase();
+    const hit = labels.find(L => L.length>=3 && H.includes(L));
+    if(hit) d._site = hit;
+  });
+  /* pass 3 — leftovers */
+  devices.forEach(d=>{ if(!d._site && !d.derived) d._site = labels.length ? "UNGROUPED" : SITE_NONE; });
+  /* ordered site list + metadata */
+  const order = [];
+  devices.forEach(d=>{ if(d._site && !order.includes(d._site)) order.push(d._site); });
+  const meta = {};
+  order.forEach(k=>{
+    const members = devices.filter(d=>d._site===k);
+    const withLoc = members.find(m=>m.location);
+    meta[k] = { key:k, label:k===SITE_NONE?"":k, location: withLoc?withLoc.location:"",
+      count: members.length, members };
+  });
+  return { order, meta };
+}
+function siteOf(d){ return d && d._site ? d._site : SITE_NONE; }
+/* dedupe byte-identical uploads (same hostname + same interface fingerprint) */
+function dedupeDevices(list, notes){
+  const seen = {}, out = [];
+  list.forEach(d=>{
+    const fp = String(d.hostname||"").toLowerCase() + "|" + (d.mgmtIp||"") + "|" +
+      (d.interfaces||[]).map(i=>i.name+":"+(i.ip||"")).join(",");
+    if(seen[fp]){ if(notes) notes.push(`\u26a0 ${d.source||d.hostname} duplicates ${seen[fp]} \u2014 ignored`); return; }
+    seen[fp] = d.source || d.hostname;
+    out.push(d);
+  });
+  return out;
+}
+/* ── site-level summary renderers (overview + grid) ─────────────── */
+function drawSiteSummary(svg, keys, mode){
+  const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+  const counts = k => {
+    const m = SITES.meta[k].members, c = {};
+    m.forEach(d=>{ c[d.type] = (c[d.type]||0)+1; });
+    return c;
+  };
+  const typeOrder = ["router","sdwan","switch","ap","endpoint","unknown"];
+  if(mode === "grid"){
+    const CW=320, CH=150, GAP=26, per=Math.max(1,Math.min(4,keys.length));
+    const W = per*CW + (per+1)*GAP, rows = Math.ceil(keys.length/per);
+    const H = rows*CH + (rows+1)*GAP + 40;
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.setAttribute("width",W); svg.setAttribute("height",H);
+    const t=mk("text",{x:GAP,y:28,style:"font-family:var(--sans);font-size:14px;font-weight:700;fill:var(--ink)"},svg);
+    t.textContent = keys.length + " locations";
+    keys.forEach((k,i)=>{
+      const cx = GAP + (i%per)*(CW+GAP), cy = 46 + GAP + Math.floor(i/per)*(CH+GAP);
+      const g = mk("g",{transform:`translate(${cx},${cy})`, style:"cursor:pointer"},svg);
+      mk("rect",{width:CW,height:CH,rx:12,style:"fill:var(--panel);stroke:var(--panel-edge)"},g);
+      mk("rect",{width:CW,height:30,rx:12,style:"fill:var(--c-sdwan);opacity:.12"},g);
+      const nm=mk("text",{x:14,y:20,style:"font-family:var(--sans);font-size:12.5px;font-weight:700;fill:var(--ink)"},g);
+      nm.textContent = SITES.meta[k].label;
+      const lo=mk("text",{x:14,y:48,style:"font-family:var(--mono);font-size:8.5px;fill:var(--muted)"},g);
+      const L=String(SITES.meta[k].location||"").replace(/"/g,"");
+      lo.textContent = L ? (L.length>44?L.slice(0,43)+"…":L) : "no location in config";
+      const c = counts(k); let yy=70;
+      typeOrder.forEach(ty=>{
+        if(!c[ty]) return;
+        mk("rect",{x:14,y:yy-8,width:10,height:10,rx:2,style:`fill:var(${TYPE[ty].cssVar})`},g);
+        const r=mk("text",{x:32,y:yy,style:"font-family:var(--mono);font-size:9.5px;fill:var(--ink)"},g);
+        r.textContent = c[ty] + " × " + TYPE[ty].label;
+        yy += 16;
+      });
+      const dr = SITES.meta[k].members.filter(d=>offSiteGateways.some(o=>o.id===d.id)).length;
+      if(dr){
+        const wt=mk("text",{x:CW-14,y:CH-12,style:"font-family:var(--mono);font-size:9px;fill:var(--hl);text-anchor:end"},g);
+        wt.textContent = "⚠ " + dr + " gateway drift";
+      }
+      g.addEventListener("click",()=>{ viewMode="single"; singleSite=k; refreshViewMenu(); render(); });
+    });
+    return;
+  }
+  /* overview — every site around the shared SD-WAN overlay */
+  const R = Math.max(190, 58*keys.length), CXo = R+220, CYo = R+120;
+  const W = CXo+R+220, H = CYo+R+120;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.setAttribute("width",W); svg.setAttribute("height",H);
+  const t=mk("text",{x:24,y:30,style:"font-family:var(--sans);font-size:14px;font-weight:700;fill:var(--ink)"},svg);
+  t.textContent = "SD-WAN overlay — " + keys.length + " locations";
+  const sub=mk("text",{x:24,y:50,style:"font-family:var(--mono);font-size:9.5px;fill:var(--muted)"},svg);
+  sub.textContent = "spokes are locations found in the configs; the overlay is drawn because every site shares one org/controller set";
+  mk("circle",{cx:CXo,cy:CYo,r:64,style:"fill:var(--panel);stroke:var(--c-sdwan);stroke-width:2"},svg);
+  const ov=mk("text",{x:CXo,y:CYo-4,style:"font-family:var(--mono);font-size:10px;font-weight:700;fill:var(--c-sdwan);text-anchor:middle"},svg);
+  ov.textContent = "SD-WAN";
+  const ov2=mk("text",{x:CXo,y:CYo+12,style:"font-family:var(--mono);font-size:8.5px;fill:var(--muted);text-anchor:middle"},svg);
+  ov2.textContent = "overlay";
+  keys.forEach((k,i)=>{
+    const ang = (-90 + i*(360/keys.length)) * Math.PI/180;
+    const x = CXo + Math.cos(ang)*R, y = CYo + Math.sin(ang)*R;
+    mk("path",{d:`M ${CXo+Math.cos(ang)*64} ${CYo+Math.sin(ang)*64} L ${x-Math.cos(ang)*70} ${y-Math.sin(ang)*34}`,
+      style:"stroke:var(--link-inf);stroke-width:1.6;stroke-dasharray:4 4;fill:none"},svg);
+    const g=mk("g",{transform:`translate(${x-70},${y-34})`, style:"cursor:pointer"},svg);
+    mk("rect",{width:140,height:68,rx:10,style:"fill:var(--panel);stroke:var(--c-switch);stroke-width:1.6"},g);
+    const nm=mk("text",{x:12,y:20,style:"font-family:var(--sans);font-size:11.5px;font-weight:700;fill:var(--ink)"},g);
+    nm.textContent = SITES.meta[k].label;
+    const c=counts(k);
+    const cs=mk("text",{x:12,y:37,style:"font-family:var(--mono);font-size:8.5px;fill:var(--muted)"},g);
+    cs.textContent = typeOrder.filter(ty=>c[ty]).map(ty=>c[ty]+"×"+ty).join("  ");
+    const L=String(SITES.meta[k].location||"").replace(/"/g,"");
+    const lo=mk("text",{x:12,y:52,style:"font-family:var(--mono);font-size:7.5px;fill:var(--faint)"},g);
+    lo.textContent = L ? (L.length>26?L.slice(0,25)+"…":L) : "";
+    g.addEventListener("click",()=>{ viewMode="single"; singleSite=k; refreshViewMenu(); render(); });
+  });
+}
+/* ── display hostname ──────────────────────────────────────────────
+   Long org-prefixed hostnames (SDWB-PINE-TREE-REALTY-OAKBROOK-PRI) all
+   truncate to the same string, making boxes indistinguishable. Detect an
+   org token shared by most devices and drop it from the LABEL only — the
+   full hostname stays in the detail panel, search and tooltips. */
+let orgToken = "";
+function computeOrgToken(){
+  orgToken = "";
+  const hosts = devices.filter(d=>!d.derived && d.hostname).map(d=>String(d.hostname).toUpperCase());
+  if(hosts.length < 2) return;
+  const cand = {};
+  hosts.forEach(h=>{
+    const parts = h.split("-").filter(Boolean);
+    for(let len=2; len<=Math.min(4,parts.length-1); len++){
+      for(let i=0; i+len<=parts.length-1; i++){
+        const t = parts.slice(i,i+len).join("-");
+        if(t.length < 6) continue;
+        cand[t] = (cand[t]||0)+1;
+      }
+    }
+  });
+  let best="", bestN=0;
+  Object.keys(cand).forEach(t=>{
+    if(cand[t] > bestN || (cand[t]===bestN && t.length>best.length)){ best=t; bestN=cand[t]; }
+  });
+  if(bestN >= Math.max(2, Math.ceil(hosts.length*0.5))) orgToken = best;
+}
+function displayHost(d){
+  let h = String(d.hostname||"");
+  if(orgToken){
+    const re = new RegExp("[-_]?" + orgToken.replace(/[-]/g,"[-_]") + "[-_]?", "i");
+    const stripped = h.replace(re, "-").replace(/^-+|-+$/g,"").replace(/--+/g,"-");
+    if(stripped.length >= 3) h = stripped;
+  }
+  return h.length > 22 ? h.slice(0,21) + "…" : h;
+}
+/* ── VRRP helpers ────────────────────────────────────────────────
+   Role comes from priority within the site, not from the -PRI/-BCK name. */
+function vrrpRole(d){
+  if(!(d.vrrp||[]).length) return "";
+  const peers = devices.filter(o=>o.id!==d.id && (o.vrrp||[]).length && siteOf(o)===siteOf(d));
+  if(!peers.length) return "";
+  const myPrio = Math.max(...d.vrrp.map(v=>v.priority||0));
+  const best = Math.max(...peers.map(o=>Math.max(...o.vrrp.map(v=>v.priority||0))));
+  if(myPrio > best) return "MASTER";
+  if(myPrio < best) return "BACKUP";
+  return "VRRP";
+}
+function vrrpSummary(d){
+  const v = d.vrrp||[];
+  if(!v.length) return "";
+  /* lead with the group whose VIP is actually used as someone's gateway */
+  const used = v.find(g => devices.some(o => o.id!==d.id && o.wan &&
+                       ipOf(o.wan.gateway) === ipOf(g.vip))) || v[0];
+  const prio = used.priority!=null ? "  ·  prio " + used.priority : "";
+  return "VRRP grp" + used.group + " VIP " + used.vip +
+         (v.length>1 ? "  (+" + (v.length-1) + ")" : "") + prio;
+}
+/* ── Tunnel overlay ─────────────────────────────────────────────────
+   Drawn as a BUS rather than a mesh: a tunnel line per gateway rises into a
+   horizontal bus beneath the controller row, and each controller drops a short
+   stub onto that bus. 4 sites × 4 controllers is 16 crossing curves as a mesh;
+   as a bus it is 4 risers + 4 stubs and reads cleanly. Only the interesting
+   pairs — a MISSING tunnel — are drawn individually. External site-to-site
+   peers go to their own band below the diagram. */
+function drawTunnelOverlay(svg, pos, layer, W, H, topBand, botBand, reserve, hdrBand){
+  const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+  const gw = devices.filter(d=>!d.derived && (d.tunnels||[]).length && pos[d.id]);
+  if(!gw.length) return [];
+  const notes = [];
+  const ctrls = [...new Set(gw.flatMap(d=>(d.tunnels||[]).filter(t=>t.controller).map(t=>t.controller)))].sort();
+  const peers = [...new Set(gw.flatMap(d=>(d.tunnels||[]).filter(t=>!t.controller&&t.peer).map(t=>t.peer)))].sort();
+  const CW=156, CH=30;
+
+  /* ── controller row + bus ── */
+  const ctrlPos = {};
+  let busY = 0;
+  if(ctrls.length){
+    /* spread the controllers evenly across the full canvas width rather than
+       clustering them in the middle — with 4 controllers on a wide multi-site
+       canvas the centred block looked condensed */
+    /* the left gutter (x < ~120) belongs to the tier labels — WAN / CLOUD,
+       SD-WAN OVERLAY, SWITCHING — so the row starts clear of it */
+    const MARGIN_L = 132, MARGIN_R = 24;
+    const usable = Math.max(CW, W - MARGIN_L - MARGIN_R - CW);
+    const step = ctrls.length > 1 ? usable / (ctrls.length - 1) : 0;
+    const rowY = (hdrBand||0) + 8;
+    busY = rowY + CH + 14;
+    ctrls.forEach((c,i)=>{
+      const x = ctrls.length > 1 ? MARGIN_L + i*step : (W - CW)/2;
+      ctrlPos[c] = {x:x+CW/2, y:rowY+CH};
+      const g = mk("g",{class:"ctrl-node",transform:`translate(${x},${rowY})`},layer);
+      mk("rect",{width:CW,height:CH,rx:6},g);
+      const t1=mk("text",{x:9,y:13,style:"font-family:var(--mono);font-size:8.5px;font-weight:700;fill:var(--c-sdwan)"},g);
+      t1.textContent = c;
+      const dc = controllerDC(c);
+      const t2=mk("text",{x:9,y:24,style:"font-family:var(--mono);font-size:7px;fill:var(--muted)"},g);
+      t2.textContent = dc ? (dc + " · derived") : "controller · derived";
+      const ti = document.createElementNS(NS,"title");
+      ti.textContent = c + (dc ? " — SD-WAN controller, " + dc : " — SD-WAN controller") + " (referenced by name, not uploaded)";
+      g.appendChild(ti);
+      /* stub from the controller down onto the bus */
+      mk("path",{class:"edge-tunnel",d:`M ${x+CW/2} ${rowY+CH} L ${x+CW/2} ${busY}`},layer);
+    });
+    /* the bus itself */
+    const xs = ctrls.map(c=>ctrlPos[c].x).concat(gw.map(d=>pos[d.id].x));
+    mk("path",{class:"edge-tunnel-bus",
+      d:`M ${Math.min(...xs)} ${busY} L ${Math.max(...xs)} ${busY}`},layer);
+    const bl = mk("text",{x:Math.min(...xs)-6, y:busY-4,
+      style:"font-family:var(--mono);font-size:7.5px;fill:var(--c-sdwan);text-anchor:end"},layer);
+    bl.textContent = "IPsec";
+  }
+
+  /* ── one riser per gateway, labelled with its tunnel count ── */
+  gw.forEach(d=>{
+    const p = pos[d.id];
+    const mine = (d.tunnels||[]).filter(t=>t.controller);
+    if(!mine.length || !ctrls.length) return;
+    mk("path",{class:"edge-tunnel",d:`M ${p.x} ${p.y-NODE_H/2} L ${p.x} ${busY}`},layer);
+    /* the count sits beside its OWN node, clear of the site headers up top */
+    const txt = mine.length + "/" + ctrls.length + " tunnels";
+    const bw = txt.length*5.2+12;
+    /* sit on the midpoint of this riser: clear of the site header band above
+       and of the node's own badges / port labels below */
+    const mid = (busY + (p.y - NODE_H/2)) / 2;
+    const lx = p.x + 8;
+    const ly = reserve(lx, mid - 7, bw, 14);
+    mk("rect",{x:lx,y:ly,width:bw,height:14,rx:4,
+      style:"fill:var(--panel);stroke:var(--c-sdwan);stroke-width:1;opacity:.95"},layer);
+    const t = mk("text",{x:lx+6,y:ly+10,
+      style:"font-family:var(--mono);font-size:7.5px;fill:var(--c-sdwan)"},layer);
+    t.textContent = txt;
+  });
+
+  /* ── only the MISSING pairs get an explicit line ── */
+  gw.forEach(d=>{
+    const mineC = (d.tunnels||[]).filter(t=>t.controller).map(t=>t.controller);
+    if(!mineC.length) return;
+    const missing = ctrls.filter(c=>!mineC.includes(c));
+    if(!missing.length) return;
+    notes.push(`\u26a0 ${displayHost(d)} builds ${mineC.length} of ${ctrls.length} controller tunnels \u2014 missing ` +
+      missing.map(c=>{ const dc = controllerDC(c); return c + (dc?" ("+dc+")":""); }).join(", "));
+    const p = pos[d.id];
+    missing.forEach(c=>{
+      const cp = ctrlPos[c]; if(!cp) return;
+      mk("path",{class:"edge-tunnel-missing",
+        d:`M ${p.x} ${p.y-NODE_H/2} C ${p.x} ${busY+24}, ${cp.x} ${busY+24}, ${cp.x} ${cp.y}`},layer);
+      const lbl = "✗ no " + c;
+      const w2 = lbl.length*5.2+14;
+      const mid2 = (busY + (p.y - NODE_H/2)) / 2;
+      const mx2 = p.x - w2 - 10;
+      const my2 = reserve(mx2, mid2 - 7, w2, 15);
+      mk("rect",{x:mx2,y:my2,width:w2,height:15,rx:4,
+        style:"fill:var(--panel);stroke:var(--c-unknown);stroke-width:1"},layer);
+      const t=mk("text",{x:mx2+7,y:my2+11,
+        style:"font-family:var(--mono);font-size:7.5px;fill:var(--c-unknown)"},layer);
+      t.textContent = lbl;
+    });
+  });
+
+  /* ── external site-to-site peers, in their own band below ── */
+  if(peers.length){
+    const gap = 16;
+    const span = peers.length*CW + (peers.length-1)*gap;
+    let x = Math.max(16, (W - span)/2);
+    const py = H - CH - 10;
+    peers.forEach(p=>{
+      const g = mk("g",{transform:`translate(${x},${py})`},layer);
+      mk("rect",{width:CW,height:CH,rx:6,
+        style:"fill:var(--panel);stroke:var(--hl);stroke-width:1.4;stroke-dasharray:4 3"},g);
+      const names=[...new Set(gw.flatMap(d=>(d.tunnels||[]).filter(t=>t.peer===p).map(t=>t.name)))];
+      const t1=mk("text",{x:9,y:13,style:"font-family:var(--mono);font-size:8.5px;font-weight:700;fill:var(--hl)"},g);
+      t1.textContent = names[0] || "peer";
+      const t2=mk("text",{x:9,y:24,style:"font-family:var(--mono);font-size:7px;fill:var(--muted)"},g);
+      t2.textContent = p;
+      /* connect each gateway that declares this peer */
+      gw.filter(d=>(d.tunnels||[]).some(t=>t.peer===p)).forEach(d=>{
+        const q = pos[d.id];
+        mk("path",{class:"edge-tunnel-ext",
+          d:`M ${q.x} ${q.y+NODE_H/2} C ${q.x} ${(q.y+py)/2}, ${x+CW/2} ${(q.y+py)/2}, ${x+CW/2} ${py}`},layer);
+      });
+      x += CW + gap;
+    });
+  }
+
+  /* ── asymmetry across an HA pair ── */
+  const bySite = {};
+  gw.forEach(d=>{ (bySite[siteOf(d)] = bySite[siteOf(d)]||[]).push(d); });
+  Object.keys(bySite).forEach(sk=>{
+    const members = bySite[sk];
+    if(members.length < 2) return;
+    const all = [...new Set(members.flatMap(d=>(d.tunnels||[]).filter(t=>!t.controller&&t.peer).map(t=>t.name)))];
+    all.forEach(nm=>{
+      const have = members.filter(d=>(d.tunnels||[]).some(t=>t.name===nm));
+      if(have.length !== members.length){
+        notes.push(`\u26a0 tunnel "${nm}" is configured on ${have.map(d=>displayHost(d)).join(", ")} only \u2014 not on all ${members.length} appliances at ${sk} (asymmetric failover)`);
+      }
+    });
+  });
+  const b2b = gw.some(d=>(d.tunnels||[]).some(t=>/branch-sdwan/i.test(t.type||"")));
+  if(b2b && SITES.order.filter(k=>k!==SITE_NONE).length > 1){
+    notes.push("\u2139 branch-to-branch tunnels are brokered dynamically by the controllers (b2b-sdwan) \u2014 no static site-to-site config exists, so none is drawn");
+  }
+  return notes;
+}
+/* ── SD-WAN controller naming convention ────────────────────────────
+   Controller hostnames carry a site prefix that identifies the datacentre
+   hosting them. Mapping it turns an opaque code into a real location.
+   Extend this table as more datacentres appear.                        */
+const CONTROLLER_DC = {
+  SAC: "Sacramento DC",
+  SNT: "Chicago DC",
+};
+function controllerDC(name){
+  const m = String(name||"").toUpperCase().match(/^([A-Z]{2,4})[-_]/);
+  return (m && CONTROLLER_DC[m[1]]) ? CONTROLLER_DC[m[1]] : "";
+}
+function boxVlanText(d){
+  return (d.switching && d.switching.vlans) ? "VLANs " + d.switching.vlans
+       : (d.lan && d.lan.vlan) ? String(d.lan.vlan) : "";
+}
+function boxAssetLine(d){
+  const parts = [];
+  if(d.serial)   parts.push("SN " + d.serial);
+  if(d.firmware) parts.push("fw " + d.firmware);
+  if(d.uptime)   parts.push("up " + d.uptime);
+  let s = parts.join("  ·  ");
+  return s.length > 40 ? s.slice(0,39)+"…" : s;
+}
+/* ── Node-box meta line (Advanced view only) ─────────────────
+   Shows the VENDOR for every device that declares one, with the physical
+   LOCATION appended when the config states one. Returns "" when there's
+   nothing the config actually proves. */
+/* vendor and location are separate lines — combined they overflowed the box */
+function boxVendorLine(d){
+  return d.vendor ? String(d.vendor) : "";
+}
+function boxLocationLine(d){
+  if(!d.location) return "";
+  let loc = String(d.location).trim().replace(/"/g,"");
+  return loc.length > 30 ? loc.slice(0,29) + "…" : loc;
+}
+function boxMetaLine(d){        /* kept for the height calculation */
+  return boxVendorLine(d) || boxLocationLine(d);
+}
+function anyBoxMetaLine(){
+  return devices.some(d => !d.derived && boxMetaLine(d));
+}
+
 function buildPortChips(d){
-  const ifs = (d.interfaces||[]).filter(i=>/^(gi|fa|te|eth|e\d|ge|xe)/i.test(i.name||""));
+  const ifs = (d.interfaces||[]).filter(i=>/^(gi|fa|te|eth|e\d|ge|xe)/i.test(i.name||"") || /^\d+\/\d+$/.test(i.name||""));
   if(!ifs.length) return null;
-  const num = n => { const m=String(n).match(/(\d+)$/); return m?+m[1]:0; };
+  const num = n => { const m=String(n).match(/^(\d+)\/(\d+)$/); if(m) return (+m[1])*1000+(+m[2]);
+    const t=String(n).match(/(\d+)$/); return t?+t[1]:0; };
   ifs.sort((a,b)=>num(a.name)-num(b.name));
   const chips = [], empties = [];
   let run = null;
   const flush = ()=>{ if(run){ chips.push(run); run=null; } };
   const short = r => String(r||"").replace(/^"|"$/g,"").toUpperCase();
-  const isTrunk = i => /trunk/i.test(i.vlan||"") || /cross-?connect|sdwan|uplink|-ap\b/i.test(i.role||"");
+  const isTrunk = i => i.trunk===true || /trunk/i.test(i.vlan||"") || /cross-?connect|sdwan|uplink|-ap\b|\brouter\b|\brtr\b|gateway/i.test(i.role||"");
   ifs.forEach(i=>{
     const used = (i.role && i.role!=="") || (i.vlan && i.vlan!=="" && i.vlan!=="—");
     if(!used){ flush(); empties.push(i.name); return; }
     if(isTrunk(i)){                       // trunks never group
       flush();
       let dir = "";
-      if(/sdwan|uplink/i.test(i.role||"")) dir = "↑";
+      if(/sdwan|uplink|\brouter\b|\brtr\b|gateway/i.test(i.role||"")) dir = "↑";
       else if(/cross-?connect/i.test(i.role||"")) dir = "↔";
       else if(/-ap\b|ap$/i.test(short(i.role))) dir = "↓";
       chips.push({ports:[i.name], label:short(i.role)||"TRUNK", vlan:i.vlan,
-        color:portVlanColor(i), n:1, trunk:true, dir});
+        color:portVlanColor(i), n:1, trunk:true, dir,
+        state:i.state||"", speed:i.speed||"", duplex:i.duplex||""});
       return;
     }
     const key = short(i.role)+"|"+(i.vlan||"");
     if(run && run.key===key){ run.ports.push(i.name); run.n++; }
     else { flush(); run={key, ports:[i.name], label:short(i.role)||("vlan "+(i.vlan||"").replace(/\D/g,"")),
-                          vlan:i.vlan, color:portVlanColor(i), n:1}; }
+                          vlan:i.vlan, color:portVlanColor(i), n:1,
+                          state:i.state||"", speed:i.speed||"", duplex:i.duplex||""}; }
   });
   flush();
   return {chips, empties};
@@ -663,8 +1239,48 @@ let inferredLinks = [];   // {x, y, evidence}
 let showInferred = true;
 let linkFixNotes = [];    // rule-3 auto-correction warnings from the last render
 let suppressDerived = false; // user removed the derived INTERNET node
-let advancedMode = false;    // Advanced view: physical port labels at each link end
+/* ── Advanced view = independent feature flags ────────────────────
+   Each is toggled from the Advanced dropdown. All off == the classic
+   "Advanced: OFF" simple view. `advancedMode` stays as a derived
+   convenience flag meaning "not the plain simple view". */
+const ADV_FEATURES = [
+  {key:"portMap",     label:"Port map strip",              sub:"per-port chips, grouped runs, VLAN colours, trunk arrows"},
+  {key:"linkDetail",  label:"Detailed link labels",        sub:"port · description · media · IP · gateway · circuit"},
+  {key:"vlans",       label:"VLANs inside the device box", sub:"e.g. “VLANs 10, 20, 30, 40, 50”"},
+  {key:"vendorLoc",   label:"Vendor & location in the box",sub:"e.g. “Versa · 2732 PORT SHELDON ST, JENISON…”"},
+  {key:"chipXconn",   label:"Port-to-port cross-connect",  sub:"switch-to-switch drawn chip-to-chip (needs port map)"},
+  {key:"speedDuplex", label:"Interface speed & duplex",    sub:"1G/full, 100M/half on each port chip"},
+  {key:"portState",   label:"Port state colouring",        sub:"up / down / err-disabled / standby"},
+  {key:"poe",         label:"PoE budget",                  sub:"switch budget/used, plus per-port draw"},
+  {key:"asset",       label:"Serial / firmware / uptime",  sub:"asset line inside the box"},
+  {key:"vrrp",        label:"VRRP / HA detail",            sub:"master + backup badges, groups and virtual addresses"},
+  {key:"tunnels",     label:"Tunnel overlay",              sub:"IPsec tunnels to SD-WAN controllers and external peers"},
+];
+/* features ticked the moment the app opens — the detail most people want
+   straight away, without turning on the heavier port-map layers */
+const ADV_DEFAULT_ON = ["linkDetail", "vendorLoc", "vrrp", "tunnels"];
+const ADV = {};
+ADV_FEATURES.forEach(f => ADV[f.key] = ADV_DEFAULT_ON.includes(f.key));
+let advancedMode = false;    // derived: true when any feature above is on
+function syncAdvancedMode(){
+  advancedMode = ADV_FEATURES.some(f => ADV[f.key]);
+  return advancedMode;
+}
 let animStagger = 0;         // per-render stagger for packet round-trips
+let offSiteGateways = [];    // gateways that resolve to a device at another site
+let tunnelNotes = [];        // findings from the tunnel overlay
+let SITES = { order: [], meta: {} };   // computed each render
+let siteBands = [];          // column bands for the site-columns view
+let devicesAll = [];         // full set; `devices` may be a filtered view of it
+const VIEWS = [
+  {key:"columns",  label:"Site columns",      sub:"one column per location, tier rows aligned  (default)"},
+  {key:"stacked",  label:"Stacked per-site",  sub:"a full diagram per site, one under the other"},
+  {key:"single",   label:"One site at a time",sub:"pick a single location; everything else hidden"},
+  {key:"overview", label:"Overlay overview",  sub:"SD-WAN fabric: one node per site around the overlay"},
+  {key:"grid",     label:"Site grid",         sub:"compact card per site with device counts"},
+];
+let viewMode = "columns";    // Option A is the default
+let singleSite = null;       // active site for the "one site at a time" view
 
 /* ── Bidirectional round-trip animation with ping rings ─────────────
    A packet in `color` travels the path start → end and lands with a
@@ -722,6 +1338,9 @@ function computeInferredLinks(){
     if(d.lan) add(d.lan.ip,"LAN IP");
     if(d.wan) add(d.wan.ip,"WAN IP");
     (d.interfaces||[]).forEach(i=>add(i.ip,i.name));
+    /* a VRRP virtual address is served by this device too — without it a VIP
+       looks unowned and the same IP at another site wins by default */
+    (d.vrrp||[]).forEach(v=>add(v.vip, "VRRP grp "+v.group+" VIP"));
   });
   const seen = new Set();
   const declared = new Set(devices.filter(d=>d.uplink).map(d=>[d.id,d.uplink].sort().join("|")));
@@ -750,15 +1369,21 @@ function computeInferredLinks(){
        phantom SW→SD-WAN line we deliberately removed. */
     const gw = d.wan && ipOf(d.wan.gateway);
     if(gw && ipIdx[gw] && !d.peerOf){
-      const owners = [...new Set(ipIdx[gw].filter(o=>o.id!==d.id).map(o=>o.id))];
+      /* SITE-SCOPED, same as the solid-link rule: sites reuse identical
+         addressing, so an owner at another site is not evidence of a cable. */
+      const sameSite = ipIdx[gw].filter(o=>o.id!==d.id &&
+        byId[o.id] && siteOf(byId[o.id])===siteOf(d));
+      const owners = [...new Set(sameSite.map(o=>o.id))];
       if(owners.length === 1){
         const owner = byId[owners[0]];
         const pn = String(owner.hostname||"").toLowerCase().split(".")[0];
         const hasPort = (d.neighbors||[]).some(n=>String(n.remoteHost||"").toLowerCase().split(".")[0]===pn)
           || (d.interfaces||[]).some(i=>/sdwan|sd-wan|uplink|wan-lan/i.test(i.role||""))
+          || ((owner.type==="router"||owner.type==="sdwan") &&
+              (d.interfaces||[]).some(i=>/\brouter\b|\brtr\b|gateway|\bgw\b|firewall/i.test(i.role||"")))
           || (pn.length>=4 && (d.interfaces||[]).some(i=>String(i.role||"").toLowerCase().includes(pn)));
         if(hasPort){
-          const hit = ipIdx[gw].find(o=>o.id===owners[0]);
+          const hit = sameSite.find(o=>o.id===owners[0]);
           addLink(d.id, owners[0],
             `${d.hostname}: default gateway ${gw} is ${owner.hostname} (${hit.where})`);
         }
@@ -796,11 +1421,53 @@ function computeInferredLinks(){
 function render(){
   const svg = $("topo");
   svg.innerHTML = "";
-  NODE_H = advancedMode ? 66 : 52;   // taller box in Advanced to fit the VLAN line
+  /* node height grows per enabled in-box line (VLANs / vendor+location / asset) */
+  {
+    let extraLines = 0;
+    if(ADV.vlans     && devices.some(d=>!d.derived && boxVlanText(d)))  extraLines++;
+    if(ADV.vendorLoc && devices.some(d=>!d.derived && boxVendorLine(d)))   extraLines++;
+    if(ADV.vendorLoc && devices.some(d=>!d.derived && boxLocationLine(d))) extraLines++;
+    if(ADV.asset     && devices.some(d=>!d.derived && boxAssetLine(d))) extraLines++;
+    if(ADV.vrrp      && devices.some(d=>!d.derived && vrrpSummary(d)))   extraLines++;
+    NODE_H = 52 + extraLines*14;
+  }
   animStagger = 0;                   // restagger the packet round-trips each render
   nodeEls = {}; selected = null;
   $("panel").classList.remove("open");
   byId = Object.fromEntries(devices.map(d=>[d.id,d]));
+  offSiteGateways = [];
+  siteBands = [];
+  SITES = computeSites();          // must precede evidence: gateways are site-scoped
+  /* Keep the FULL device set safe in devicesAll; the single-site view renders a
+     filtered copy so switching views never loses data. A fresh upload (an id we
+     have not seen) resets the reference set. */
+  const known = new Set(devicesAll.map(d=>d.id));
+  const isFreshLoad = devices.some(d=>!known.has(d.id)) || !devicesAll.length;
+  if(isFreshLoad) devicesAll = devices.slice();
+  if(viewMode === "single"){
+    const keys = [...new Set(devicesAll.filter(d=>!d.derived).map(d=>siteOf(d)))].filter(k=>k!==SITE_NONE);
+    if(keys.length){
+      if(!singleSite || !keys.includes(singleSite)) singleSite = keys[0];
+      devices = devicesAll.filter(d => d.derived || siteOf(d) === singleSite);
+    }
+  } else if(devices.length < devicesAll.length){
+    devices = devicesAll.slice();          // leaving single view restores everything
+  }
+  byId = Object.fromEntries(devices.map(d=>[d.id,d]));
+  SITES = computeSites();
+  computeOrgToken();
+
+  /* ── OPTIONS D & E: site-level summary views. These draw one node per
+     LOCATION rather than per device, so they render their own picture and
+     return. Counts and labels come only from what was uploaded. ── */
+  if((viewMode === "overview" || viewMode === "grid") && devices.length){
+    const keys = SITES.order.filter(k=>k!==SITE_NONE);
+    if(keys.length){
+      drawSiteSummary(svg, keys, viewMode);
+      $("emptyState").style.display = "none";
+      return;
+    }
+  }
 
   $("emptyState").style.display = devices.length ? "none" : "flex";
   $("legend").classList.toggle("show", devices.length>0);
@@ -830,21 +1497,54 @@ function render(){
       if(d.wan) add(d.wan.ip,"WAN IP");
       if(Array.isArray(d.lanGateways)) d.lanGateways.forEach(g=>add(g.ip, g.name||"LAN gw"));
       (d.interfaces||[]).forEach(i=>add(i.ip,i.name));
+      /* VRRP virtual addresses are genuinely served by this device */
+      (d.vrrp||[]).forEach(v=>add(v.vip, "VRRP grp "+v.group+" VIP"));
     });
     return idx;
   }
   let ipOwner = buildIpOwner();
 
-  /* gwParent[id] = {pid, gw, where}: the unique uploaded device that owns id's gateway */
+  /* gwParent[id] = {pid, gw, where}: the unique uploaded device that owns id's gateway.
+     SITE-SCOPED: sites routinely reuse the same RFC1918 addressing (every branch
+     has a 10.0.20.1), so a gateway may only be matched against devices in the
+     SAME site. An owner found only in another site is recorded as off-site drift
+     and never drawn as a link. */
   function buildGwParent(){
     const gp = {};
     devices.forEach(d=>{
       const gw = d.wan && ipOf(d.wan.gateway);
       if(!gw || !ipOwner[gw]) return;
-      const owners = [...new Set(ipOwner[gw].filter(o=>o.id!==d.id).map(o=>o.id))];
+      const all = ipOwner[gw].filter(o=>o.id!==d.id);
+      const mine = all.filter(o=>{ const od = byId[o.id]; return od && siteOf(od)===siteOf(d); });
+      const pool = mine.length ? mine : [];
+      let owners = [...new Set(pool.map(o=>o.id))];
+      /* A VRRP virtual address is legitimately owned by every member of the group.
+         That is not ambiguity — the MASTER (highest priority) serves it, so resolve
+         to that member instead of discarding the evidence. */
+      if(owners.length > 1){
+        const vipOwners = owners.map(id=>byId[id])
+          .filter(o=>o && (o.vrrp||[]).some(v=>ipOf(v.vip)===gw));
+        if(vipOwners.length === owners.length && vipOwners.length){
+          const master = vipOwners.slice().sort((a,b)=>{
+            const pa = Math.max(...(a.vrrp||[]).filter(v=>ipOf(v.vip)===gw).map(v=>v.priority||0));
+            const pb = Math.max(...(b.vrrp||[]).filter(v=>ipOf(v.vip)===gw).map(v=>v.priority||0));
+            return pb - pa;
+          })[0];
+          const grp = (master.vrrp||[]).find(v=>ipOf(v.vip)===gw);
+          gp[d.id] = { pid: master.id, gw,
+            where: "VRRP grp " + (grp?grp.group:"?") + " VIP (master)" };
+          return;
+        }
+      }
       if(owners.length===1){
-        const hit = ipOwner[gw].find(o=>o.id===owners[0]);
+        const hit = pool.find(o=>o.id===owners[0]);
         gp[d.id] = { pid: owners[0], gw, where: hit.where };
+      } else if(!mine.length && all.length){
+        /* the gateway belongs to a device at a DIFFERENT site — flag, don't link */
+        const off = byId[all[0].id];
+        if(off && !offSiteGateways.some(x=>x.id===d.id && x.gw===gw))
+          offSiteGateways.push({ id:d.id, host:d.hostname, gw,
+            ownerHost: off.hostname, ownerSite: siteOf(off), mySite: siteOf(d) });
       }
     });
     return gp;
@@ -864,6 +1564,10 @@ function render(){
     const pn = String(parent.hostname||"").toLowerCase().split(".")[0];
     if((d.neighbors||[]).some(n => String(n.remoteHost||"").toLowerCase().split(".")[0] === pn)) return true;
     if(ifs.some(i => /sdwan|sd-wan|uplink|wan-lan/i.test(i.role||""))) return true;
+    /* a port explicitly described as facing a router/gateway corroborates a
+       router- or sdwan-type parent (e.g. EdgeSwitch 0/1 'SNET-ROUTER') */
+    if((parent.type==="router"||parent.type==="sdwan") &&
+       ifs.some(i => /\brouter\b|\brtr\b|gateway|\bgw\b|firewall/i.test(i.role||""))) return true;
     if(pn.length>=4 && ifs.some(i => String(i.role||"").toLowerCase().includes(pn))) return true;
     return false;
   }
@@ -917,6 +1621,24 @@ function render(){
     }
   });
 
+  /* IN-SITE fallback: a switch that has a port described as facing a router but
+     whose configured gateway did not resolve inside its own site attaches to that
+     site's PRIMARY gateway (the router/SD-WAN not marked BCK/BACKUP/SEC). This is
+     the physical truth on sites where the gateway line is template drift. */
+  devices.forEach(d=>{
+    if(d.uplink || d.derived) return;
+    if(d.type !== "switch" && d.type !== "ap") return;
+    const facesRouter = (d.interfaces||[]).some(i => /\brouter\b|\brtr\b|gateway|\bgw\b/i.test(i.role||""));
+    if(!facesRouter) return;
+    const inSite = devices.filter(o => o.id!==d.id && !o.derived && siteOf(o)===siteOf(d) &&
+      (o.type==="router" || o.type==="sdwan"));
+    if(!inSite.length) return;
+    const primary = inSite.find(o => !/BCK|BACKUP|\bSEC\b/i.test(o.hostname||"")) || inSite[0];
+    d.uplink = primary.id;
+    d.uplinkBasis = "evidence: router-facing port + site";
+    evidencePromotions.push(`${d.hostname} \u25b2 ${primary.hostname} \u2014 port described facing a router, same site (${siteOf(d)})`);
+  });
+
   /* reverse CDP/LLDP: a would-be parent's neighbor table names this device
      (APs/endpoints rarely export their own tables — the switch's table
      is the evidence). Unique claimant at/above this device = its parent. */
@@ -968,6 +1690,7 @@ function render(){
     const edgeDevs = [];
     devices.forEach(d=>{
       if(gwParent[d.id]) return;                     // gateway owned inside the map → not the WAN edge
+      if(offSiteGateways.some(o=>o.id===d.id)) return;  // gateway exists, just at another site
       const gw = d.wan && ipOf(d.wan.gateway);
       const hasIpGw = gw && isIp(gw);
       /* Versa / SD-WAN edge proves WAN via named circuits or DHCP WAN ifaces */
@@ -1043,14 +1766,14 @@ function render(){
      switches) so their labels/VLAN text never crowd each other. */
   const STRIP_GRID_W = 3*(84+6) - 6;                 // must match CHIP_W/GAPX/perRow below
   const HGAP = 150;
-  const colMin = (advancedMode ? Math.max(NODE_W+56, STRIP_GRID_W+70) : (NODE_W+56)) + HGAP;
-  const W = Math.max(advancedMode?980:860, maxPerSlot*colMin+120);
+  const colMin = (ADV.portMap ? Math.max(NODE_W+56, STRIP_GRID_W+70) : (NODE_W+56)) + HGAP;
+  let W = Math.max(ADV.portMap?980:860, maxPerSlot*colMin+120);
 
   /* Advanced mode: a switch/sdwan node grows a port-chip strip beneath it.
      Pre-compute each device's strip and the extra height its row needs. */
   const stripOf = {};
   let stripRowExtra = new Array(slots.length).fill(0);
-  if(advancedMode){
+  if(ADV.portMap){
     slots.forEach((list,slot)=>{
       let maxRows = 0;
       list.forEach(d=>{
@@ -1097,25 +1820,105 @@ function render(){
 
   /* cumulative slot Y (variable height: base spacing + strips + adaptive) */
   const slotY = [];
-  let cy = TOP;
+  /* the tunnel overlay needs its own bands: controllers above the diagram and
+     external peers below it, so nothing is drawn on top of the topology */
+  /* ── vertical stack, top to bottom ─────────────────────────────
+       1. site header strip  — PERMANENT, always pinned to the very top
+       2. tunnel band        — SD-WAN controllers + IPsec bus, below the headers
+       3. device tiers        — INTERNET first, then the rest
+     The controllers, bus and INTERNET all move to clear the site headers;
+     the site headers themselves never move. */
+  const hasCols  = (viewMode === "columns" &&
+                    SITES.order.filter(k=>k!==SITE_NONE).length > 1);
+  const HDR_BAND = hasCols ? 44 : 0;                  /* 8 top + 26 strip + 10 gap */
+  const TUN_BAND = ADV.tunnels ? 58 : 0;              /* controller row + bus */
+  const TUN_TOP  = HDR_BAND + TUN_BAND;
+  const busAbs   = ADV.tunnels ? HDR_BAND + 52 : 0;   /* where the IPsec bus sits */
+  const lowestBand = ADV.tunnels ? busAbs : (hasCols ? 34 : 0);
+  const TUN_BOT = (ADV.tunnels && devices.some(d=>(d.tunnels||[]).some(t=>!t.controller&&t.peer))) ? 66 : 0;
+  /* the first tier clears whichever band ends lowest, by 16px */
+  let cy = Math.max(TOP + TUN_TOP, lowestBand + 16 + NODE_H/2);
   slots.forEach((list,slot)=>{ slotY[slot]=cy; cy += TIER_H + stripRowExtra[slot] + (rowLabelExtra[slot+1]||0); });
-  const H = cy + 20;
+  let H = cy + 20 + TUN_BOT;
   svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
   svg.setAttribute("width",W); svg.setAttribute("height",H);
 
   const pos = {};
-  slots.forEach((list,slot)=>{
-    const n = list.length;
-    if(n === 1){
-      list.forEach(d=>{ pos[d.id] = {x: W/2, y: slotY[slot]}; });
-    } else {
-      /* fixed pitch = colMin (includes the +150 horizontal breathing room),
-         centered on the canvas so peers sit a consistent distance apart */
-      const totalW = (n-1)*colMin;
-      const startX = W/2 - totalW/2;
-      list.forEach((d,i)=>{ pos[d.id] = {x: startX + i*colMin, y: slotY[slot]}; });
-    }
-  });
+  const siteCols = SITES.order.filter(k=>k!==SITE_NONE);
+  const useColumns = (viewMode === "columns") && siteCols.length > 1;
+  if(useColumns){
+    /* ── OPTION A: one column per site, tier rows stay aligned ──
+       Each site gets an x-band wide enough for its busiest tier; devices are
+       centred inside their own band. Devices with no site (the derived
+       INTERNET) are centred across the whole canvas and shared by all sites. */
+    const perSiteMax = {};
+    siteCols.forEach(k=>{
+      perSiteMax[k] = 1;
+      slots.forEach(list=>{
+        const n = list.filter(d=>siteOf(d)===k).length;
+        if(n > perSiteMax[k]) perSiteMax[k] = n;
+      });
+    });
+    const bandW = {}; let total = 0;
+    siteCols.forEach(k=>{
+      bandW[k] = Math.max(colMin * perSiteMax[k], NODE_W + 150);
+      total += bandW[k];
+    });
+    W = Math.max(W, total + 80);
+    const bandX = {}; let run = 40 + (W - 80 - total)/2;
+    siteCols.forEach(k=>{ bandX[k] = run; run += bandW[k]; });
+    siteBands = siteCols.map(k=>({ key:k, x:bandX[k], w:bandW[k], meta:SITES.meta[k] }));
+    slots.forEach((list,slot)=>{
+      /* site-less devices (derived internet) centre on the whole canvas */
+      list.filter(d=>siteOf(d)===SITE_NONE || !siteCols.includes(siteOf(d)))
+          .forEach(d=>{ pos[d.id] = {x: W/2, y: slotY[slot]}; });
+      siteCols.forEach(k=>{
+        const mine = list.filter(d=>siteOf(d)===k);
+        if(!mine.length) return;
+        const cx = bandX[k] + bandW[k]/2;
+        const span = (mine.length-1)*colMin;
+        mine.forEach((d,i)=>{ pos[d.id] = {x: cx - span/2 + i*colMin, y: slotY[slot]}; });
+      });
+    });
+  } else if(viewMode === "stacked" && siteCols.length > 1){
+    /* ── OPTION B: a full block per site, stacked vertically ── */
+    const blockGap = 70;
+    let yRun = 0;
+    siteBands = [];
+    siteCols.forEach(k=>{
+      const mineSlots = slots.map(list=>list.filter(d=>siteOf(d)===k)).filter(l=>l.length);
+      if(!mineSlots.length) return;
+      const top = yRun;
+      mineSlots.forEach((list,i)=>{
+        const y = slotY[0] + top + i*(TIER_H);
+        const span = (list.length-1)*colMin;
+        list.forEach((d,j)=>{ pos[d.id] = {x: W/2 - span/2 + j*colMin, y}; });
+      });
+      const blockH = mineSlots.length*TIER_H;
+      siteBands.push({ key:k, x:20, w:W-40, y:slotY[0]+top-34, h:blockH+20,
+                       meta:SITES.meta[k], stacked:true });
+      yRun += blockH + blockGap;
+    });
+    /* derived internet sits above everything */
+    slots.forEach((list,slot)=>list.filter(d=>siteOf(d)===SITE_NONE)
+      .forEach(d=>{ pos[d.id] = {x: W/2, y: slotY[0] - 90}; }));
+    H = slotY[0] + yRun + 60;
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+    svg.setAttribute("height",H);
+  } else {
+    slots.forEach((list,slot)=>{
+      const n = list.length;
+      if(n === 1){
+        list.forEach(d=>{ pos[d.id] = {x: W/2, y: slotY[slot]}; });
+      } else {
+        /* fixed pitch = colMin (includes the +150 horizontal breathing room),
+           centered on the canvas so peers sit a consistent distance apart */
+        const totalW = (n-1)*colMin;
+        const startX = W/2 - totalW/2;
+        list.forEach((d,i)=>{ pos[d.id] = {x: startX + i*colMin, y: slotY[slot]}; });
+      }
+    });
+  }
 
   /* keep per-slot counts for label-density decisions */
   const slotCount = {};
@@ -1129,6 +1932,29 @@ function render(){
     const tx = el("text",{x:20,y:y-6,class:"tier-label"},svg);
     tx.textContent = names;
   });
+
+  /* ── site column headers + separators (Option A) ──
+     When the tunnel overlay is on, the controller band owns the top of the
+     canvas, so the site bands start BELOW it. */
+  if(siteBands.length){
+    /* PERMANENT: the site strip is always the top-most element */
+    const bandTop = 8;
+    const bandH   = Math.max(60, H - 16 - TUN_BOT);
+    siteBands.forEach((b,i)=>{
+      el("rect",{x:b.x+6, y:bandTop, width:b.w-12, height:bandH, rx:12,
+        style:"fill:none;stroke:var(--panel-edge);stroke-dasharray:5 5;opacity:.55"},svg);
+      el("rect",{x:b.x+6, y:bandTop, width:b.w-12, height:26, rx:12,
+        style:`fill:var(--c-sdwan);opacity:.10`},svg);
+      const st = el("text",{x:b.x+18, y:bandTop+18,
+        style:"font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--ink)"},svg);
+      st.textContent = b.meta.label;
+      const sm = el("text",{x:b.x+b.w-18, y:bandTop+18,
+        style:"font-family:var(--mono);font-size:8.5px;fill:var(--muted);text-anchor:end"},svg);
+      const loc = b.meta.location ? String(b.meta.location).replace(/"/g,"") : "";
+      sm.textContent = (b.meta.count + " device" + (b.meta.count===1?"":"s")) +
+                       (loc ? "  ·  " + (loc.length>38?loc.slice(0,37)+"…":loc) : "");
+    });
+  }
 
   /* edges — ONLY from explicit uplink fields whose target was uploaded */
   const edgeLayer = el("g",{},svg);
@@ -1180,11 +2006,18 @@ function render(){
       const lan = ifs.find(i => /lan/i.test((i.role||"")+" "+(i.name||"")) && !/wan/i.test((i.role||"")+" "+(i.name||"")));
       if(lan) return lan;
     }
-    /* uplink toward an SD-WAN / router parent: the trunk described SDWAN/UPLINK */
+    /* uplink toward an SD-WAN / router parent: the trunk described SDWAN/UPLINK,
+       or one described as facing a router/gateway/firewall (e.g. EdgeSwitch
+       0/1 "SNET-ROUTER"), else the single tagged trunk if there is exactly one */
     if(other.__isParent || other.type === "sdwan" || other.type === "router"){
       const up = ifs.find(i => /sdwan|sd-wan|uplink|wan-lan/i.test(i.role||""))
+              || ifs.find(i => /\brouter\b|\brtr\b|gateway|\bgw\b|firewall/i.test(i.role||""))
               || ifs.find(i => /uplink/i.test(i.role||""));
       if(up) return up;
+      if(d.type === "switch"){
+        const trunks = ifs.filter(i => i.trunk === true || /trunk/i.test(i.vlan||""));
+        if(trunks.length === 1) return trunks[0];
+      }
       /* Versa parent faces the LAN via its LAN sub-interface */
       if(d.type === "sdwan"){
         const lan = ifs.find(i => /lan/i.test((i.role||"")+" "+(i.name||"")) && !/wan/i.test((i.role||"")+" "+(i.name||"")));
@@ -1200,6 +2033,42 @@ function render(){
   }
 
   /* draw a port label anchored to one end of a link */
+  /* every port label registers its box; a new label that would collide is
+     nudged downward until clear. Keeps multi-child parents (a switch feeding
+     several APs / endpoints) from stacking labels on top of each other. */
+  const placedLabelBoxes = [];
+  /* Reserve the badge strip along each node's top edge (type badge + any
+     MASTER/BACKUP badge) so link labels are pushed clear of it instead of
+     landing on top. Done before any label is drawn. */
+  function reserveNodeBadgeStrips(){
+    devices.forEach(d=>{
+      const p = pos[d.id]; if(!p) return;
+      const t = TYPE[d.type] || TYPE.unknown;
+      let wid = String(t.label).length*5.4 + 12 + 12;
+      if(ADV.vrrp && vrrpRole(d)) wid += vrrpRole(d).length*5.4 + 12 + 6;
+      if(d.derived) wid = Math.max(wid, 70);
+      placedLabelBoxes.push({ x: p.x - NODE_W/2 + 6, y: p.y - NODE_H/2 - 9,
+                              w: wid, h: 18 });
+    });
+  }
+  function freeLabelY(x, y, w, h){
+    const clash = yy => placedLabelBoxes.some(r =>
+      x < r.x + r.w && x + w > r.x && yy < r.y + r.h && yy + h > r.y);
+    if(!clash(y)) return y;
+    /* search BOTH ways and take whichever moves least — nudging only downward
+       used to push a label that sits above its node all the way past the box,
+       so toggling a feature appeared to move the label to the other side */
+    let down = y, up = y, dOk = false, uOk = false;
+    for(let i=0; i<40; i++){
+      if(!dOk){ down += h + 4; if(!clash(down)) dOk = true; }
+      if(!uOk){ up   -= h + 4; if(!clash(up))   uOk = true; }
+      if(dOk || uOk) break;
+    }
+    if(uOk && dOk) return (y - up) <= (down - y) ? up : down;
+    if(uOk) return up;
+    if(dOk) return down;
+    return y;
+  }
   function drawPortLabel(x, y, port, ownerColor, extraLines, compact){
     const lines = [];
     const desc = port.role ? String(port.role) : "";
@@ -1211,6 +2080,8 @@ function render(){
     }
     const w = Math.max(...lines.map(l=>l.text.length)) * 5.6 + 16;
     const h = lines.length*12 + 8;
+    y = freeLabelY(x, y, w, h);
+    placedLabelBoxes.push({x, y, w, h});
     el("rect",{x:x, y:y, width:w, height:h, class:"edge-label-bg", rx:4,
       style:"stroke:var(--panel-edge);stroke-width:1"},edgeLayer);
     el("circle",{cx:x-4, cy:y+h/2, r:3.5, style:`fill:${ownerColor}`},edgeLayer);
@@ -1222,6 +2093,7 @@ function render(){
     return h;
   }
 
+  reserveNodeBadgeStrips();
   const parentPortLabelsDrawn = new Set();   // avoid duplicate parent-side labels for a shared port
   devices.forEach(d=>{
     if(!d.uplink || !byId[d.uplink]) return;   // no invention: missing target = no edge
@@ -1230,12 +2102,12 @@ function render(){
        is never in a lower row, but same-row (same-type) chains are legal */
     const a = pos[d.uplink], b = pos[d.id];
     /* if the parent shows a port strip (Advanced), start the edge below it */
-    const parentStrip = (advancedMode && stripOf[d.uplink]) ? stripHeight(d.uplink) : 0;
+    const parentStrip = (ADV.portMap && stripOf[d.uplink]) ? stripHeight(d.uplink) : 0;
     const aBottom = a.y + NODE_H/2 + parentStrip;
     let path;
     if(Math.abs(a.y - b.y) < 5){               // same row: bow underneath
       const bow = Math.max(aBottom, b.y + NODE_H/2 + parentStrip) + 24;
-      path = `M ${a.x} ${aBottom} C ${a.x} ${bow}, ${b.x} ${bow}, ${b.x} ${b.y+NODE_H/2+((advancedMode&&stripOf[d.id])?stripHeight(d.id):0)}`;
+      path = `M ${a.x} ${aBottom} C ${a.x} ${bow}, ${b.x} ${bow}, ${b.x} ${b.y+NODE_H/2+((ADV.portMap&&stripOf[d.id])?stripHeight(d.id):0)}`;
     } else {
       const midY = (aBottom + (b.y-NODE_H/2))/2;
       path = `M ${a.x} ${aBottom} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y-NODE_H/2}`;
@@ -1250,10 +2122,10 @@ function render(){
     const childPort  = isWanLink ? portToward(d, "wan")
                                  : portToward(d, Object.assign({__isParent:true}, parent));
     const parentPort = isWanLink ? null : portToward(parent, d);
-    const detailTier = ["internet","router","sdwan","switch"].includes(d.type);
-
-    if(detailTier && (childPort || parentPort)){
-      if(advancedMode){
+    /* every link labels both physical ends when the ports are known —
+       including APs and endpoints (port-label-near-its-owner) */
+    if(childPort || parentPort){
+      if(ADV.linkDetail){
         /* child-side label: full detail above the child node */
         if(childPort){
           const extras = [];
@@ -1270,16 +2142,17 @@ function render(){
           drawPortLabel(b.x + 14, b.y - NODE_H/2 - (14 + (extras.length)*12 + 8),
             childPort, `var(${TYPE[d.type].cssVar})`, extras, false);
         }
-        /* parent-side label — anchored directly beneath the parent node (top of
-           the gap), while the child label sits just above the child (bottom of
-           the gap). Horizontal offset to opposite sides guarantees no overlap
-           even when tiers are close. Drawn once per shared parent port. */
-        if(parentPort && !stripOf[parent.id]){
+        /* parent-side label — anchored just below the parent (or below its port
+           strip when one is shown), while the child label sits just above the
+           child. Offset to the opposite side of the link so the two never
+           overlap. Drawn once per shared parent port, so BOTH physical ends of
+           every link are always labelled. */
+        if(parentPort){
           const key = parent.id + "|" + parentPort.name;
           if(!parentPortLabelsDrawn.has(key)){
             parentPortLabelsDrawn.add(key);
             const plW = parentPort.name.length * 5.6 + 24;
-            drawPortLabel(a.x - plW - 12, a.y + NODE_H/2 + 8,
+            drawPortLabel(a.x - plW - 12, aBottom + 6,
               parentPort, `var(${TYPE[parent.type].cssVar})`, [], true);   // compact: name only
           }
         }
@@ -1322,12 +2195,12 @@ function render(){
     inferredLinks.forEach(l=>{
       /* Advanced: a lateral crossconnect is drawn chip-to-chip (gi22↔gi22)
          in a later pass, once port-chip positions are known. */
-      if(advancedMode && l.lateral){ deferredXC.push(l); return; }
+      if(ADV.chipXconn && ADV.portMap && l.lateral){ deferredXC.push(l); return; }
       let a = pos[l.x], b = pos[l.y];
       if(a.y > b.y){ const t=a; a=b; b=t; }          // draw top → bottom
       let path;
       if(Math.abs(a.y-b.y) < 5){                     // same tier: bow underneath
-        const strip = advancedMode ? Math.max(stripHeight(l.x), stripHeight(l.y)) : 0;
+        const strip = ADV.portMap ? Math.max(stripHeight(l.x), stripHeight(l.y)) : 0;
         const y0 = a.y + NODE_H/2 + strip;
         const bow = y0 + 28;
         path = `M ${a.x} ${y0} C ${a.x} ${bow}, ${b.x} ${bow}, ${b.x} ${y0}`;
@@ -1403,29 +2276,41 @@ function render(){
     const iconKey = iconFor(d);
     if(iconKey){
       const isz = 26;                                   // icon box size in the node
-      const iy = (NODE_H - isz)/2 - (advancedMode?2:0); // vertically centered
+      const iy = (NODE_H - isz)/2 - (NODE_H>52?2:0); // vertically centered
       const ig = el("g",{transform:`translate(9,${iy}) scale(${isz/48})`},g);
       ig.innerHTML = DEVICE_ICONS[iconKey](color);
     } else {
-      const glyph = el("text",{x:15,y:(advancedMode?36:33),class:"glyph",style:`fill:${color}`},g);
+      const glyph = el("text",{x:15,y:(NODE_H>52?36:33),class:"glyph",style:`fill:${color}`},g);
       glyph.textContent = t.glyph;
     }
     const host = el("text",{x:40,y:22,class:"host"},g);
-    host.textContent = String(d.hostname).slice(0,18);
+    host.textContent = displayHost(d);
     const ip = el("text",{x:40,y:38,class:"ip"},g);
     ip.textContent = d.mgmtIp
       || (d.type==="internet" && d.wan && d.wan.circuit ? String(d.wan.circuit).slice(0,20) : "");
+    /* type badge — top-LEFT of the box */
     const tagW = t.label.length*5.4+12;
-    el("rect",{x:NODE_W-tagW-8,y:-7,width:tagW,height:14,rx:3,style:`fill:${color}`},g);
-    const tt = el("text",{class:"tagtxt",x:NODE_W-tagW-2,y:3.5},g);
+    el("rect",{x:8,y:-7,width:tagW,height:14,rx:3,style:`fill:${color}`},g);
+    const tt = el("text",{class:"tagtxt",x:14,y:3.5},g);
     tt.textContent = t.label.toUpperCase();
+    if(ADV.vrrp){
+      const role = vrrpRole(d);
+      if(role){
+        const rc = role==="MASTER" ? "var(--c-ap)" : (role==="BACKUP" ? "var(--hl)" : "var(--c-sdwan)");
+        const rw = role.length*5.4+12;
+        el("rect",{x:8+tagW+6,y:-7,width:rw,height:14,rx:3,style:`fill:${rc}`},g);
+        const rt = el("text",{class:"tagtxt",x:8+tagW+12,y:3.5},g);
+        rt.textContent = role;
+      }
+    }
     if(orphan){
       const w = el("text",{x:NODE_W-14,y:NODE_H-8,class:"orphmark"},g);
       w.textContent = "⚠";
     }
     if(d.derived){
-      el("rect",{x:8,y:-7,width:58,height:14,rx:3,style:"fill:var(--brand)"},g);
-      const dt = el("text",{class:"tagtxt",x:14,y:3.5,style:"fill:#ffffff"},g);
+      /* DERIVED sits top-RIGHT so it never collides with the type badge */
+      el("rect",{x:NODE_W-58-8,y:-7,width:58,height:14,rx:3,style:"fill:var(--brand)"},g);
+      const dt = el("text",{class:"tagtxt",x:NODE_W-58-2,y:3.5,style:"fill:#ffffff"},g);
       dt.textContent = "DERIVED";
     }
     /* port count badge — on the IP line, right side (keeps the VLAN line clear) */
@@ -1434,20 +2319,37 @@ function render(){
         style:"font-family:var(--mono);font-size:9px;fill:var(--faint);text-anchor:end"},g);
       pc.textContent = d.interfaces.length + "p";
     }
-    /* VLAN line INSIDE the box (from the config) — only in Advanced view */
-    let vlanTxt = (d.switching && d.switching.vlans) ? "VLANs " + d.switching.vlans
-                : (d.lan && d.lan.vlan) ? String(d.lan.vlan) : "";
-    if(vlanTxt && advancedMode){
-      vlanTxt = vlanTxt.length > 26 ? vlanTxt.slice(0,25)+"…" : vlanTxt;
-      const vt = el("text",{x:40, y:55,
-        style:"font-family:var(--mono);font-size:8.5px;fill:var(--c-switch)"},g);
-      vt.textContent = vlanTxt;
+    /* in-box lines, each behind its own Advanced flag — stacked in order */
+    let lineY = 55;
+    const addBoxLine = (txt, col, size) => {
+      const t = el("text",{x:40, y:lineY,
+        style:`font-family:var(--mono);font-size:${size}px;fill:${col}`},g);
+      t.textContent = txt;
+      lineY += 14;
+    };
+    if(ADV.vlans){
+      const v = boxVlanText(d);
+      if(v) addBoxLine(v.length>26 ? v.slice(0,25)+"…" : v, "var(--c-switch)", 8.5);
+    }
+    if(ADV.vendorLoc){
+      const ven = boxVendorLine(d);
+      if(ven) addBoxLine(ven, color, 8);
+      const loc = boxLocationLine(d);
+      if(loc) addBoxLine(loc, "var(--muted)", 7.5);
+    }
+    if(ADV.asset){
+      const asset = boxAssetLine(d);
+      if(asset) addBoxLine(asset, "var(--muted)", 8);
+    }
+    if(ADV.vrrp){
+      const vs = vrrpSummary(d);
+      if(vs) addBoxLine(vs.length>40 ? vs.slice(0,39)+"…" : vs, "var(--c-sdwan)", 8);
     }
     g.addEventListener("click",()=>select(d.id));
     nodeEls[d.id]=g;
 
     /* Advanced: physical port-chip strip beneath the node */
-    if(advancedMode && stripOf[d.id]){
+    if(ADV.portMap && stripOf[d.id]){
       const {chips, empties} = stripOf[d.id];
       const used = (d.interfaces||[]).filter(i=>(i.role&&i.role!=="")||(i.vlan&&i.vlan!==""&&i.vlan!=="—")).length;
       const strip = el("g",{transform:`translate(0,${NODE_H+8})`},g);
@@ -1455,7 +2357,9 @@ function render(){
       const perRow = Math.max(1, Math.floor((NODE_W+150)/(CHIP_W+GAPX)));
       const startX = -( (perRow*(CHIP_W+GAPX)-GAPX) - NODE_W )/2;   // center the grid on the node
       const hdr = el("text",{x:startX,y:0,style:"font-family:var(--mono);font-size:8.5px;fill:var(--faint)"},strip);
-      hdr.textContent = `${used} of ${d.interfaces.length} ports used`;
+      let hdrTxt = `${used} of ${d.interfaces.length} ports used`;
+      if(ADV.poe && d.switching && d.switching.poe) hdrTxt += `   ·   PoE ${d.switching.poe}`;
+      hdr.textContent = hdrTxt;
       const items = chips.slice();
       if(empties.length) items.push({empty:true, ports:empties, label:"empty", n:empties.length});
       items.forEach((c,idx)=>{
@@ -1463,13 +2367,23 @@ function render(){
         const cx = startX + col*(CHIP_W+GAPX);
         const cy2 = 8 + r*(CHIP_H+GAPY);
         const cg = el("g",{transform:`translate(${cx},${cy2})`, style:"cursor:pointer"},strip);
-        const stroke = c.empty ? "var(--panel-edge)" : c.color;
+        let stroke = c.empty ? "var(--panel-edge)" : c.color;
+        if(ADV.portState && !c.empty){ stroke = chipStateColor(c) || stroke; }
         el("rect",{width:CHIP_W,height:CHIP_H,rx:4,class:"portchip",
           style:`fill:var(--panel);stroke:${stroke};stroke-width:${c.trunk?1.4:1}${c.trunk&&c.dir==="↓"?";stroke-dasharray:3 2":""}`},cg);
         const nm = el("text",{x:5,y:9,style:"font-family:var(--mono);font-size:8px;font-weight:700;fill:var(--ink)"},cg);
         nm.textContent = (c.empty?portRange(c.ports):portRange(c.ports)) + (c.dir||"");
         const lb = el("text",{x:5,y:18,style:`font-family:var(--mono);font-size:7px;fill:${c.empty?"var(--faint)":"var(--muted)"}`},cg);
-        lb.textContent = c.empty ? "empty" : (c.label.slice(0,11) + (c.n>1?" ×"+c.n:""));
+        let sub = c.empty ? "empty" : (c.label.slice(0,11) + (c.n>1?" ×"+c.n:""));
+        if(!c.empty && ADV.speedDuplex){
+          const sd = chipSpeedDuplex(c);
+          if(sd) sub = (c.label.slice(0,6) + (c.n>1?" ×"+c.n:"")) + " " + sd;
+        }
+        if(!c.empty && ADV.poe){
+          const pw = chipPoe(c);
+          if(pw) sub = sub.slice(0,10) + " " + pw;
+        }
+        lb.textContent = sub;
         if(!c.empty){
           const tEl = document.createElementNS(NS,"title");
           tEl.textContent = `${c.ports.join(", ")} — ${c.label}${c.vlan?" ("+c.vlan+")":""}`;
@@ -1488,6 +2402,14 @@ function render(){
   /* ── port-to-port crossconnect (Advanced): connect the actual gi22↔gi22 chips,
      drawn with the SAME solid edge + animated flow as every other connection,
      and labeled near each device (port-near-owner), like the simple view. ── */
+  /* ── tunnel overlay (Advanced) — drawn last so it sits above the physical map ── */
+  if(ADV.tunnels){
+    const tlayer = el("g",{},svg);
+    tunnelNotes = drawTunnelOverlay(svg, pos, tlayer, W, H, TUN_TOP, TUN_BOT,
+      (x,y,w,h)=>{ const yy = freeLabelY(x,y,w,h); placedLabelBoxes.push({x,y:yy,w,h}); return yy; },
+      HDR_BAND) || [];
+  } else tunnelNotes = [];
+
   deferredXC.forEach(l=>{
     const dx = byId[l.x], dy = byId[l.y];
     const px = portToward(dx, dy), py = portToward(dy, dx);   // the crossconnect port on each side
@@ -1544,15 +2466,63 @@ function render(){
     }
   });
 
-  /* legend — only types actually present in the uploaded data */
-  const presentTypes = [...new Set(devices.map(d=>d.type))];
-  $("legend").innerHTML = Object.entries(TYPE)
-    .filter(([k])=>presentTypes.includes(k))
-    .map(([,t])=>
-    `<div class="li"><span class="sw" style="background:var(${t.cssVar})"></span>${t.label}</div>`
-  ).join("")
-  + `<div class="li"><span class="ln solid"></span>declared link</div>`
-  + (showInferred ? `<div class="li"><span class="ln dotted"></span>inferred (evidence)</div>` : "");
+  /* ── legend — sectioned, and only ever shows what is actually on screen ── */
+  {
+    const rows = [];
+    const sec = t => rows.push(`<div class="lg-sec">${t}</div>`);
+    const li  = (sw, label) => rows.push(`<div class="li">${sw}${label}</div>`);
+    const presentTypes = [...new Set(devices.filter(d=>!d.derived).map(d=>d.type))];
+
+    sec("Devices");
+    Object.entries(TYPE).filter(([k])=>presentTypes.includes(k)).forEach(([,t])=>
+      li(`<span class="sw" style="background:var(${t.cssVar})"></span>`, t.label));
+    if(devices.some(d=>d.derived))
+      li(`<span class="sw derived"></span>`, "derived — named in a config,<br>never uploaded");
+
+    sec("Links");
+    li(`<span class="ln solid"></span>`, "physical / evidence link");
+    const lat = inferredLinks.some(l=>l.lateral);
+    if(lat) li(`<span class="ln solid"></span>`, "cross-connect (same tier)");
+    if(showInferred && inferredLinks.some(l=>!l.lateral))
+      li(`<span class="ln dotted"></span>`, "inferred from evidence");
+    if(devices.some(d=>d.uplink && !byId[d.uplink]))
+      li(`<span class="ln dotted"></span>`, "⚠ uplink target not uploaded");
+
+    if(ADV.tunnels){
+      sec("Tunnels (IPsec)");
+      li(`<span class="ln bus"></span>`, "IPsec bus — shared path");
+      li(`<span class="ln tun"></span>`, "tunnel to SD-WAN controller");
+      li(`<span class="ln tunext"></span>`, "tunnel to external peer");
+      li(`<span class="ln tunmiss"></span>`, "missing / asymmetric tunnel");
+      rows.push(`<div class="note">branch-to-branch is brokered by the controllers, so it is never drawn as point-to-point.</div>`);
+    }
+    if(ADV.vrrp && devices.some(d=>(d.vrrp||[]).length)){
+      sec("HA (VRRP)");
+      li(`<span class="bdg" style="background:var(--c-ap)">MASTER</span>`, "highest priority");
+      li(`<span class="bdg" style="background:var(--hl)">BACKUP</span>`, "standby member");
+      rows.push(`<div class="note">a virtual address is served by the master, and is a valid gateway.</div>`);
+    }
+    if(ADV.portMap && Object.keys(stripOf||{}).length){
+      sec("Port map");
+      li(`<span class="arw">↑</span>`, "uplink trunk");
+      li(`<span class="arw">↔</span>`, "cross-connect");
+      li(`<span class="arw">↓</span>`, "downlink / AP");
+      li(`<span class="arw">×n</span>`, "identical ports grouped");
+    }
+    if(hasCols){
+      sec("Layout");
+      li(`<span class="band"></span>`, `site column — ${SITES.order.filter(k=>k!==SITE_NONE).length} locations`);
+    }
+    $("legend").innerHTML =
+      `<div class="lg-hd" id="lgHd"><span>Legend</span><span id="lgTog">−</span></div>` +
+      `<div class="lg-body">${rows.join("")}</div>`;
+    const hd = $("lgHd");
+    if(hd) hd.onclick = ()=>{
+      const l = $("legend");
+      l.classList.toggle("collapsed");
+      $("lgTog").textContent = l.classList.contains("collapsed") ? "+" : "−";
+    };
+  }
 
   applySearch();
   if(typeof buildWanPanel === "function" && showWan) buildWanPanel();
@@ -1606,7 +2576,23 @@ function select(id){
     if(v.natPublic) rows.push(["Public NAT", v.natPublic]);
     if(v.location)  rows.push(["Location", v.location]);
     if(v.circuits&&v.circuits.length) rows.push(["WAN circuits", v.circuits.join(", ")]);
-    if(v.controllers&&v.controllers.length) rows.push(["Controllers", v.controllers.join(", ")]);
+    if(v.controllers&&v.controllers.length) rows.push(["Controllers",
+      v.controllers.map(c=>{ const dc = controllerDC(c); return c + (dc?" ("+dc+")":""); }).join(", ")]);
+    if((d.vrrp||[]).length){
+      rows.push(["VRRP role", vrrpRole(d) || "single"]);
+      d.vrrp.forEach(g=>rows.push([
+        "VRRP grp " + g.group,
+        "VIP " + g.vip + "  ·  real " + g.realIp + "  ·  prio " + (g.priority!=null?g.priority:"?") +
+        "  ·  " + g.iface + (g.preempt?"  ·  preempt":"")
+      ]));
+    }
+    if((d.tunnels||[]).length){
+      const ct = d.tunnels.filter(t=>t.controller);
+      const st = d.tunnels.filter(t=>!t.controller && t.peer);
+      if(ct.length) rows.push(["Controller tunnels",
+        ct.map(t=>{ const dc = controllerDC(t.controller); return t.controller + (dc?" ("+dc+")":""); }).join(", ")]);
+      st.forEach(t=>rows.push(["Tunnel " + t.name, "peer " + t.peer + (t.local?("  ·  local "+t.local):"") + (t.type?("  ·  "+t.type):"")]));
+    }
     const kv = rows.map(r=>`<div class="k">${esc(r[0])}</div><div class="v">${esc(String(r[1]))}</div>`).join("");
     html += `<div class="p-sec"><h3>SD-WAN <span style="color:var(--faint)">(Versa)</span></h3><div class="kv">${kv}</div>`;
     if(v.lanSubnets&&v.lanSubnets.length){
@@ -1800,6 +2786,126 @@ function detectTypeHeuristic(s){
 /* ── Versa SD-WAN parser (`set ...` path syntax) ──────────────────────
    Extracts identity, WAN circuits, LAN sub-interface gateways, VLANs,
    SD-WAN controllers, and org/site facts. Strictly literal. */
+/* ── Ubiquiti EdgeOS (EdgeRouter) — hierarchical curly-brace config tree ──
+   e.g.  interfaces { ethernet eth1 { address x/29  description "WAN Primary" ... } }
+   Strictly literal extraction, same as every other parser. */
+function parseBraceTree(text){
+  const root = {}; const stack = [root];
+  text.split(/\r?\n/).forEach(raw=>{
+    const line = raw.trim();
+    if(!line) return;
+    if(line === "}"){ if(stack.length>1) stack.pop(); return; }
+    let m = line.match(/^(.+?)\s*\{$/);
+    const top = stack[stack.length-1];
+    if(m){
+      const key = m[1].trim(); const obj = {};
+      if(top[key] !== undefined){ if(Array.isArray(top[key])) top[key].push(obj); else top[key]=[top[key],obj]; }
+      else top[key] = obj;
+      stack.push(obj); return;
+    }
+    m = line.match(/^(\S+)\s+(.*)$/);
+    if(m){
+      const k=m[1], v=m[2].replace(/^"(.*)"$/,"$1");
+      if(top[k] !== undefined){ if(Array.isArray(top[k])) top[k].push(v); else top[k]=[top[k],v]; }
+      else top[k] = v;
+    } else top[line] = true;
+  });
+  return root;
+}
+function parseEdgeOSConfig(text, fileName, errors){
+  const t = parseBraceTree(text);
+  const dev = { interfaces: [], source: fileName, vendor: "Ubiquiti", model: "EdgeRouter (EdgeOS)", type: "router" };
+  const sys = t["system"] || {};
+  if(sys["host-name"]) dev.hostname = String(sys["host-name"]);
+  if(sys["domain-name"]) dev.notes = "domain " + sys["domain-name"];
+  /* physical location — EdgeOS keeps it under service { snmp { location } } */
+  const snmpBlk = ((t["service"]||{})["snmp"]) || {};
+  if(snmpBlk["location"]) dev.location = String(snmpBlk["location"]);
+  else if(sys["location"]) dev.location = String(sys["location"]);
+
+  /* default route → WAN gateway */
+  let defGw = null;
+  const stat = (t["protocols"]||{})["static"] || {};
+  Object.keys(stat).forEach(k=>{
+    if(/^route\s+0\.0\.0\.0\/0$/.test(k)){
+      Object.keys(stat[k]).forEach(nk=>{
+        const nm = nk.match(/^next-hop\s+(\S+)$/); if(nm) defGw = nm[1];
+      });
+    }
+  });
+
+  /* interfaces: ethernet ethN (+ vif M sub-interfaces) */
+  const vlans = new Set(); let wanIfs = [];
+  const ifs = t["interfaces"] || {};
+  Object.keys(ifs).forEach(k=>{
+    const m = k.match(/^ethernet\s+(eth\d+)$/);
+    if(!m) return;
+    const name = m[1]; const blk = ifs[k];
+    const desc = blk["description"] ? String(blk["description"]) : "";
+    const addr = blk["address"] ? String(Array.isArray(blk["address"])?blk["address"][0]:blk["address"]) : "";
+    dev.interfaces.push({ name, role: desc, ip: addr || "—", vlan: "", state: "up" });
+    if(/\bwan\b/i.test(desc)) wanIfs.push({ name, desc, addr });
+    Object.keys(blk).forEach(vk=>{
+      const vm = vk.match(/^vif\s+(\d+)$/);
+      if(!vm) return;
+      const vb = blk[vk]; const vid = vm[1]; vlans.add(vid);
+      const vaddr = vb["address"] ? String(Array.isArray(vb["address"])?vb["address"][0]:vb["address"]) : "—";
+      const vdesc = vb["description"] ? String(vb["description"]) : "";
+      dev.interfaces.push({ name: `${name}.${vid}`, role: vdesc, ip: vaddr, vlan: vid, state: "up" });
+    });
+  });
+  if(vlans.size) dev.switching = { vlans: [...vlans].sort((a,b)=>a-b).join(", ") };
+
+  /* WAN evidence — primary first (static addr wins), gateway from default route */
+  if(wanIfs.length){
+    const prim = wanIfs.find(w=>w.addr && w.addr!=="dhcp") || wanIfs[0];
+    dev.wan = { ip: prim.addr || "dhcp",
+      gateway: defGw || "",
+      circuit: wanIfs.map(w=>`${w.desc} (${w.name})`).join(" + ") };
+  }
+  /* mgmt IP: prefer a MGMT-described vif, else eth0 */
+  const mgmt = dev.interfaces.find(i=>/mgmt|mgt/i.test(i.role) && i.ip!=="—" && i.ip!=="dhcp");
+  if(mgmt) dev.mgmtIp = mgmt.ip; else {
+    const e0 = dev.interfaces.find(i=>i.name==="eth0" && i.ip!=="—");
+    if(e0) dev.mgmtIp = e0.ip;
+  }
+  if(!dev.hostname){ errors.push(`${fileName}: EdgeOS config has no host-name`); dev.hostname = fileName; }
+  dev.id = dev.hostname.toLowerCase();
+  return dev;
+}
+
+/* ── Ubiquiti EdgeSwitch / FASTPATH-style switch config ──
+   e.g.  network parms 192.168.200.4 255.255.255.0 192.168.200.1
+         interface 0/1  description 'SNET-ROUTER'  vlan tagging 10,20,200 */
+function parseEdgeSwitchConfig(text, fileName, errors){
+  const dev = { interfaces: [], source: fileName, vendor: "Ubiquiti", model: "EdgeSwitch (FASTPATH)", type: "switch" };
+  let m = text.match(/^hostname\s+"([^"]+)"/mi) || text.match(/^hostname\s+(\S+)/mi);
+  if(m) dev.hostname = m[1];
+  m = text.match(/^network\s+parms\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)/mi);
+  if(m){
+    const maskBits = m[2].split(".").map(Number).reduce((a,o)=>a+((o>>>0).toString(2).match(/1/g)||[]).length,0);
+    dev.mgmtIp = `${m[1]}/${maskBits}`;
+    dev.wan = { gateway: m[3] };            /* gateway-chain evidence (L3) */
+  }
+  const vl = text.match(/^vlan\s+([\d,\s]+)$/mi);
+  if(vl) dev.switching = { vlans: vl[1].split(",").map(s=>s.trim()).filter(Boolean).join(", ") };
+  const lines = text.split(/\r?\n/); let cur = null;
+  for(const raw of lines){
+    const line = raw.replace(/\s+$/,"");
+    let im = line.match(/^interface\s+(\d+\/\d+)$/i);
+    if(im){ cur = { name: im[1], role: "", ip: "—", vlan: "", state: "up" }; dev.interfaces.push(cur); continue; }
+    if(/^exit\b/i.test(line)){ cur = null; continue; }
+    if(!cur) continue;
+    let dm = line.match(/^description\s+'([^']*)'/i) || line.match(/^description\s+"([^"]*)"/i) || line.match(/^description\s+(\S.*)$/i);
+    if(dm){ cur.role = dm[1].trim(); continue; }
+    dm = line.match(/^vlan\s+pvid\s+(\d+)/i);          if(dm){ cur.vlan = dm[1]; continue; }
+    dm = line.match(/^vlan\s+tagging\s+([\d,]+)/i);    if(dm){ cur.vlan = dm[1]; cur.trunk = true; continue; }
+  }
+  if(!dev.hostname){ errors.push(`${fileName}: FASTPATH config has no hostname`); dev.hostname = fileName; }
+  dev.id = dev.hostname.toLowerCase();
+  return dev;
+}
+
 function parseVersaConfig(text, fileName, errors){
   const dev = { interfaces: [], source: fileName, vendor: "Versa", type: "sdwan",
                 typeNote: "Versa SD-WAN (set-syntax)" };
@@ -1814,7 +2920,9 @@ function parseVersaConfig(text, fileName, errors){
   dev.serial = g(/set\s+system\s+sd-wan\s+site\s+chassis-id\s+(\S+)/i);
   const siteId = g(/set\s+system\s+sd-wan\s+site\s+site-id\s+(\S+)/i);
   const org    = g(/set\s+orgs\s+org\s+(\S+)\s+appliance-owner/i) || g(/provider-org\s+(\S+)/i);
-  const loc    = g(/set\s+system\s+identification\s+location\s+"([^"]+)"/i);
+  const loc    = g(/set\s+system\s+identification\s+location\s+"([^"]+)"/i)
+              || g(/set\s+snmp\s+system\s+location\s+"([^"]+)"/i)
+              || g(/set\s+snmp\s+system\s+location\s+(\S+)/i);
   const siteType = g(/set\s+system\s+sd-wan\s+site\s+site-type\s+(\S+)/i);
 
   /* WAN circuits: each `wan-interfaces <if> inet circuit-name <NAME>` */
@@ -1857,6 +2965,25 @@ function parseVersaConfig(text, fileName, errors){
 
   /* SD-WAN controllers (control-plane peers) */
   const controllers = [...new Set([...text.matchAll(/sd-wan\s+controllers\s+([A-Z0-9\-]+)\s+site-name/gi)].map(x=>x[1]))];
+  /* ── IPsec tunnels: every vpn-profile, its type and its remote peer.
+     branch-sdwan profiles are control-plane tunnels to a controller;
+     site-to-site profiles have an explicit peer address. ── */
+  const tun = {};
+  [...text.matchAll(/ipsec\s+vpn-profile\s+([A-Za-z0-9_.\-]+)\s+vpn-type\s+(\S+)/gi)]
+    .forEach(m=>{ tun[m[1]] = tun[m[1]] || {name:m[1]}; tun[m[1]].type = m[2]; });
+  [...text.matchAll(/ipsec\s+vpn-profile\s+([A-Za-z0-9_.\-]+)\s+peer\s+address\s+\[?\s*([0-9.]+)/gi)]
+    .forEach(m=>{ tun[m[1]] = tun[m[1]] || {name:m[1]}; tun[m[1]].peer = m[2]; });
+  [...text.matchAll(/ipsec\s+vpn-profile\s+([A-Za-z0-9_.\-]+)\s+local\s+address\s+([0-9.]+)/gi)]
+    .forEach(m=>{ tun[m[1]] = tun[m[1]] || {name:m[1]}; tun[m[1]].local = m[2]; });
+  [...text.matchAll(/ipsec\s+vpn-profile\s+([A-Za-z0-9_.\-]+)\s+local\s+interface-name\s+(\S+)/gi)]
+    .forEach(m=>{ tun[m[1]] = tun[m[1]] || {name:m[1]}; tun[m[1]].iface = m[2]; });
+  const tunnels = Object.values(tun).map(t=>{
+    /* a profile named <CONTROLLER>-Profile is the tunnel to that controller */
+    const cm = String(t.name).match(/^(.*?)-Profile$/i);
+    if(cm && controllers.includes(cm[1])) t.controller = cm[1];
+    return t;
+  });
+  if(tunnels.length) dev.tunnels = tunnels;
 
   /* mgmt IP: prefer the VOICE/mgmt LAN subnet's gateway (host .1) if present */
   const mgmtSub = lanSubs.find(s=>/voice|mgmt|20\b/i.test((s.role||"")+" "+(s.vlanId||"")))
@@ -1878,6 +3005,28 @@ function parseVersaConfig(text, fileName, errors){
     natPublic: natPub, controllers, circuits: wanCircuits.map(c=>c.name),
     lanSubnets: lanSubs.map(s=>({ subnet:s.ip, role:s.role, vlan:s.vlanId }))
   };
+  if(loc) dev.location = loc;        /* canonical field, shown in the node box */
+
+  /* ── VRRP groups: a virtual-address is a REAL owned gateway IP, served by
+     whichever member holds the highest priority. Without this, a switch whose
+     gateway is the VIP looks like it points nowhere (or worse, at a same-subnet
+     device in another site). ── */
+  const vr = {};
+  [...text.matchAll(/set\s+interfaces\s+(\S+)\s+unit\s+(\d+)\s+family\s+inet\s+address\s+(\S+?)\s+vrrp-group\s+(\d+)\s+(\S+)(?:\s+(.*))?/gi)]
+    .forEach(m=>{
+      const [,ifn,unit,addr,grp,key,val] = m;
+      const k = grp;
+      vr[k] = vr[k] || { group:+grp, iface:`${ifn}.${unit}`, realIp:addr, vip:"", priority:null, preempt:false };
+      if(/^virtual-address$/i.test(key)){
+        const ip = String(val||"").replace(/[\[\]]/g,"").trim().split(/\s+/)[0];
+        if(ip) vr[k].vip = ip;
+      }
+      if(/^priority$/i.test(key))     vr[k].priority = parseInt(val,10);
+      if(/^preempt-mode$/i.test(key))  vr[k].preempt = /preempt/i.test(val||"");
+    });
+  const vrList = Object.values(vr).filter(v=>v.vip).sort((a,b)=>a.group-b.group);
+  if(vrList.length) dev.vrrp = vrList;
+
 
   dev.id = dev.hostname;
   return dev;
@@ -1889,6 +3038,14 @@ function parseTextConfig(text, fileName, errors){
   if(/^set\s+(system|interfaces|orgs)\s/mi.test(text) && /versa|vni-0\/|sd-wan\s+site|confdConfig/i.test(text)){
     return parseVersaConfig(text, fileName, errors);
   }
+  /* Ubiquiti EdgeOS (EdgeRouter): hierarchical curly-brace tree with host-name */
+  if(/^\s*(interfaces|firewall|system|service)\s*\{\s*$/m.test(text) && /host-name\s+\S+/.test(text)){
+    return parseEdgeOSConfig(text, fileName, errors);
+  }
+  /* Ubiquiti EdgeSwitch / FASTPATH: `network parms ip mask gw` + `vlan participation` */
+  if(/^network\s+parms\s+\d+\.\d+\.\d+\.\d+\s+\d/mi.test(text) || /^vlan\s+participation\s+/mi.test(text)){
+    return parseEdgeSwitchConfig(text, fileName, errors);
+  }
   const lines = text.split(/\r?\n/);
   const dev = { interfaces: [], source: fileName };
   const lower = text.toLowerCase();
@@ -1896,7 +3053,7 @@ function parseTextConfig(text, fileName, errors){
   /* directive comments: ! topo-id: x / # topo-type: x / ! topo-uplink: x */
   const directives = {};
   for(const ln of lines){
-    const m = ln.match(/^[!#]\s*topo-(id|type|uplink)\s*:\s*(\S+)/i);
+    const m = ln.match(/^[!#]\s*topo-(id|type|uplink|site)\s*:\s*(\S+)/i);
     if(m) directives[m[1].toLowerCase()] = m[2];
   }
 
@@ -1922,6 +3079,13 @@ function parseTextConfig(text, fileName, errors){
   m = text.match(/System [Ss]erial [Nn]umber\s*:\s*(\S+)/i)
    || text.match(/Processor board ID\s+(\S+)/i);                       if(m) dev.serial = m[1];
   m = text.match(/uptime is\s+(.+)/i);                                 if(m) dev.uptime = m[1].trim();
+
+  /* physical location — only if the config states it (never inferred) */
+  m = text.match(/^\s*snmp-server\s+location\s+"?([^"\r\n]+)"?/mi)
+   || text.match(/^\s*snmp\s+location\s+"?([^"\r\n]+)"?/mi)
+   || text.match(/^\s*set\s+snmp\s+system\s+location\s+"([^"]+)"/mi)
+   || text.match(/^\s*set\s+snmp\s+system\s+location\s+(\S+)/mi);
+  if(m) dev.location = m[1].trim();
 
   /* default gateway (WAN side) */
   let gw = null;
@@ -2051,6 +3215,7 @@ function parseTextConfig(text, fileName, errors){
 
   /* uplink — ONLY from directive, never inferred */
   if(directives.uplink) dev.uplink = directives.uplink;
+  if(directives.site)   dev.topoSite = directives.site;
 
   return dev;
 }
@@ -2098,8 +3263,11 @@ async function handleFiles(fileList){
   if(linkFixNotes.length) msg += "\n" + linkFixNotes.join("\n");
   if(inferredLinks.length) msg += ` ${inferredLinks.length} link(s) inferred from config evidence (dotted — click a device to see why).`;
   if(orphans) msg += ` ${orphans} device(s) reference an uplink not present in the data (shown dashed ⚠).`;
+  if(offSiteGateways.length) msg += "\n" + offSiteGateways.map(o=>
+    `\u26a0 ${o.host}: gateway ${o.gw} resolves to ${o.ownerHost} at site ${o.ownerSite}, not ${o.mySite}`).join("\n");
+  if(tunnelNotes.length) msg += "\n" + tunnelNotes.join("\n");
   if(errors.length) msg += "\n" + errors.join("\n");
-  setStatus(msg, errors.length>0);
+  setStatus(msg, errors.length>0 || offSiteGateways.length>0);
 }
 
 /* ── Landing-page animated preview ─────────────────────────────
@@ -2177,13 +3345,136 @@ $("inferBtn").onclick = ()=>{
   $("inferBtn").textContent = "Inferred links: " + (showInferred ? "ON" : "OFF");
   render();
 };
-$("advBtn").onclick = ()=>{
-  advancedMode = !advancedMode;
+/* ── Advanced dropdown: one checkbox per feature ───────────────── */
+function buildAdvMenu(){
+  const m = $("advMenu");
+  m.innerHTML = "";
+  const head = document.createElement("div");
+  head.className = "dd-head"; head.textContent = "Show extra detail";
+  m.appendChild(head);
+  ADV_FEATURES.forEach(f=>{
+    const row = document.createElement("label");
+    row.className = "dd-cb";
+    row.innerHTML = '<input type="checkbox" class="dd-chk"><span><span class="dd-lbl"></span><span class="dd-sub"></span></span>';
+    row.querySelector(".dd-lbl").textContent = f.label;
+    row.querySelector(".dd-sub").textContent = f.sub;
+    /* the <label> forwards clicks to the input, so drive state from the
+       input's change event (a click handler on the row would double-fire) */
+    row.addEventListener("click", ev=>ev.stopPropagation());
+    row.querySelector(".dd-chk").addEventListener("change", ev=>{
+      ev.stopPropagation();
+      ADV[f.key] = ev.target.checked;
+      /* chip-to-chip cross-connect needs the port map to exist */
+      if(f.key === "chipXconn" && ADV.chipXconn) ADV.portMap = true;
+      if(f.key === "portMap" && !ADV.portMap)    ADV.chipXconn = false;
+      refreshAdvMenu(); syncAdvancedMode(); render();
+    });
+    row._key = f.key;
+    m.appendChild(row);
+  });
+  const acts = document.createElement("div");
+  acts.className = "dd-actions";
+  [["All on", ()=>ADV_FEATURES.forEach(f=>ADV[f.key]=true)],
+   ["All off", ()=>ADV_FEATURES.forEach(f=>ADV[f.key]=false)],
+   ["Classic advanced", ()=>{ADV_FEATURES.forEach(f=>ADV[f.key]=false);
+      ["portMap","linkDetail","vlans","vendorLoc","chipXconn"].forEach(k=>ADV[k]=true);}],
+   ["Defaults", ()=>{ADV_FEATURES.forEach(f=>ADV[f.key]=ADV_DEFAULT_ON.includes(f.key));}]
+  ].forEach(([lab,fn])=>{
+    const b = document.createElement("button");
+    b.className = "dd-mini"; b.textContent = lab;
+    b.addEventListener("click", ev=>{ ev.stopPropagation(); fn(); refreshAdvMenu(); syncAdvancedMode(); render(); });
+    acts.appendChild(b);
+  });
+  m.appendChild(acts);
+  refreshAdvMenu();
+}
+function refreshAdvMenu(){
+  $("advMenu").querySelectorAll(".dd-cb").forEach(row=>{
+    const chk = row.querySelector(".dd-chk");
+    if(chk) chk.checked = !!ADV[row._key];
+  });
+  const n = ADV_FEATURES.filter(f=>ADV[f.key]).length;
   const b = $("advBtn");
-  b.textContent = "Advanced: " + (advancedMode ? "ON" : "OFF");
-  b.classList.toggle("primary", advancedMode);
-  render();
-};
+  b.textContent = "Advanced" + (n ? " ("+n+") ▾" : " ▾");
+  b.classList.toggle("primary", n>0);
+}
+buildAdvMenu();
+syncAdvancedMode();      /* defaults are ticked, so advancedMode starts true */
+
+/* ── View dropdown: the five multi-site layouts (single choice) ────── */
+function buildViewMenu(){
+  const m = $("viewMenu");
+  m.innerHTML = "";
+  const head = document.createElement("div");
+  head.className = "dd-head"; head.textContent = "Multi-site layout";
+  m.appendChild(head);
+  VIEWS.forEach(v=>{
+    const row = document.createElement("label");
+    row.className = "dd-cb";
+    row.innerHTML = '<input type="radio" name="viewmode" class="dd-chk"><span><span class="dd-lbl"></span><span class="dd-sub"></span></span>';
+    row.querySelector(".dd-lbl").textContent = v.label;
+    row.querySelector(".dd-sub").textContent = v.sub;
+    row.addEventListener("click", ev=>ev.stopPropagation());
+    row.querySelector(".dd-chk").addEventListener("change", ev=>{
+      ev.stopPropagation();
+      viewMode = v.key;
+      refreshViewMenu(); render();
+    });
+    row._key = v.key;
+    m.appendChild(row);
+  });
+  const siteWrap = document.createElement("div");
+  siteWrap.className = "dd-site"; siteWrap.id = "viewSites";
+  m.appendChild(siteWrap);
+  refreshViewMenu();
+}
+function refreshViewMenu(){
+  $("viewMenu").querySelectorAll(".dd-cb").forEach(row=>{
+    const r = row.querySelector(".dd-chk");
+    if(r) r.checked = (viewMode === row._key);
+  });
+  const v = VIEWS.find(x=>x.key===viewMode);
+  $("viewBtn").textContent = "View: " + (v?v.label:"—") + " ▾";
+  /* site chooser only matters for the single-site view */
+  const wrap = $("viewSites");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const keys = [...new Set((devicesAll.length?devicesAll:devices).filter(d=>!d.derived).map(d=>siteOf(d)))]
+                 .filter(k=>k && k!==SITE_NONE);
+  if(viewMode !== "single" || keys.length < 2) return;
+  keys.forEach(k=>{
+    const b = document.createElement("button");
+    b.className = "dd-sitebtn" + (k===singleSite ? " on" : "");
+    b.textContent = k;
+    b.addEventListener("click", ev=>{ ev.stopPropagation(); singleSite = k; refreshViewMenu(); render(); });
+    wrap.appendChild(b);
+  });
+}
+buildViewMenu();
+
+/* ── generic dropdown open/close ───────────────────────────────── */
+function closeAllMenus(){
+  document.querySelectorAll(".dropdown").forEach(d=>d.classList.remove("open"));
+  document.querySelectorAll(".btn.menu-open").forEach(b=>{
+    b.classList.remove("menu-open"); b.setAttribute("aria-expanded","false");
+  });
+}
+function wireMenu(btnId, menuId){
+  const b = $(btnId), m = $(menuId);
+  if(!b || !m) return;
+  b.addEventListener("click", e=>{
+    e.stopPropagation();
+    const open = m.classList.contains("open");
+    closeAllMenus();
+    if(!open){ m.classList.add("open"); b.classList.add("menu-open"); b.setAttribute("aria-expanded","true"); }
+  });
+  m.addEventListener("click", e=>e.stopPropagation());
+}
+wireMenu("viewBtn","viewMenu");
+wireMenu("advBtn","advMenu");
+wireMenu("dlBtn","dlMenu");
+document.addEventListener("click", closeAllMenus);
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeAllMenus(); });
 {
   const ss = $("spacingSel");
   if(ss) ss.onchange = ()=>{ spacingMode = ss.value; render(); };
@@ -2209,7 +3500,7 @@ function buildWanPanel(){
     wp.classList.add("show");
     return;
   }
-  wp.innerHTML = `<h3>WAN Side — edge of each device (from loaded data)</h3>
+  wp.innerHTML = `<h3>WAN details — internet-facing edge of each device (from loaded data)</h3>
     <table class="wan">
       <tr><th>Device</th><th>WAN IP</th><th>Gateway</th><th>Circuit</th><th>NAT / Overlay</th></tr>
       ${rows.map(d=>{
@@ -2229,11 +3520,11 @@ function buildWanPanel(){
 }
 $("wanBtn").onclick = ()=>{
   showWan = !showWan;
-  $("wanBtn").textContent = showWan ? "☁ WAN side ✕" : "☁ WAN side";
+  $("wanBtn").textContent = showWan ? "☁ WAN details ✕" : "☁ WAN details";
   buildWanPanel();
 };
 
-$("exportBtn").onclick = ()=>{
+function exportTopologyJSON(){
   if(!devices.length){ setStatus("Nothing to export — load data first.", true); return; }
   const blob = new Blob([JSON.stringify({devices}, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
@@ -2242,7 +3533,7 @@ $("exportBtn").onclick = ()=>{
   a.click();
   URL.revokeObjectURL(a.href);
   setStatus(`Exported ${devices.length} devices (including any manual uplinks) to topology.json.`);
-};
+}
 
 /* ── Vector PDF export ───────────────────────
    Serializes the live SVG (already vector) with the theme's CSS variables
@@ -2289,7 +3580,104 @@ function exportVectorPDF(){
   win.document.open(); win.document.write(doc); win.document.close();
   setStatus("Opened the vector PDF view. Choose \"Save as PDF\" as the destination in the print dialog to keep full image quality.");
 }
-$("pdfBtn").onclick = exportVectorPDF;
+
+/* ── Serialise the live SVG with theme variables resolved (shared by PNG/PDF) ── */
+function serialiseSvg(){
+  const svg = $("topo");
+  const cs = getComputedStyle(document.body);
+  const varNames = ["--c-internet","--c-router","--c-sdwan","--c-switch","--c-ap",
+    "--c-endpoint","--c-unknown","--brand","--panel","--panel-edge","--ink",
+    "--muted","--faint","--bg","--hl","--link-inf","--mono","--sans","--head-grad"];
+  let markup = new XMLSerializer().serializeToString(svg.cloneNode(true));
+  varNames.forEach(v=>{
+    const val = cs.getPropertyValue(v).trim() || "#888";
+    markup = markup.split("var("+v+")").join(val);
+  });
+  if(!/xmlns=/.test(markup)) markup = markup.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+  const vb = (svg.getAttribute("viewBox")||"0 0 1000 700").split(/\s+/).map(Number);
+  return { markup, w: vb[2]||1000, h: vb[3]||700, bg: cs.getPropertyValue("--bg").trim() || "#0f1b30" };
+}
+
+/* ── PNG export (2× raster, flattened onto the theme background) ── */
+function exportPNG(){
+  if(!devices.length){ setStatus("Nothing to export — load data first.", true); return; }
+  const {markup, w, h, bg} = serialiseSvg();
+  const scale = 2;
+  const img = new Image();
+  const blob = new Blob([markup], {type:"image/svg+xml;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  img.onload = ()=>{
+    const cv = document.createElement("canvas");
+    cv.width = Math.round(w*scale); cv.height = Math.round(h*scale);
+    const ctx = cv.getContext("2d");
+    ctx.fillStyle = bg; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    URL.revokeObjectURL(url);
+    cv.toBlob(b=>{
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = "network-topology.png";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      setStatus(`Downloaded network-topology.png (${cv.width}×${cv.height}, 2× scale).`);
+    }, "image/png");
+  };
+  img.onerror = ()=>{ URL.revokeObjectURL(url);
+    setStatus("PNG export failed while rasterising the diagram. The vector PDF export always works — try that instead.", true); };
+  img.src = url;
+}
+
+/* ── Interactive HTML export ──────────────────────────────────────
+   Writes a copy of this whole tool with the current devices baked in,
+   so it opens showing this topology — no upload step — with the
+   animation, Advanced menu and clickable nodes all intact. */
+function exportInteractiveHTML(){
+  if(!devices.length){ setStatus("Nothing to export — load data first.", true); return; }
+  const doc = document.documentElement.cloneNode(true);
+  /* reset transient UI state in the copy WITHOUT removing child elements
+     (#statusBar owns the summary span + toggle, so only clear its classes) */
+  const sBar = doc.querySelector("#statusBar");
+  if(sBar){ sBar.className = ""; }
+  const sSum = doc.querySelector("#statusSummary");
+  if(sSum){ sSum.textContent = ""; }
+  const sDet = doc.querySelector("#status");
+  if(sDet){ sDet.className = ""; sDet.textContent = ""; }
+  const payload = {
+    devices: devices,
+    adv: ADV,
+    spacing: spacingMode,
+    suppressDerived: suppressDerived
+  };
+  const boot = doc.ownerDocument.createElement("script");
+  boot.textContent = "\n/* ── baked-in topology (exported snapshot) ── */\n"
+    + "window.__BAKED__ = " + JSON.stringify(payload) + ";\n";
+  doc.querySelector("head").appendChild(boot);
+  const html = "<!DOCTYPE html>\n" + doc.outerHTML;
+  const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "network-topology-interactive.html";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus(`Exported an interactive copy with ${devices.length} devices baked in — it opens straight to this topology, offline.`);
+}
+
+/* menu actions */
+$("dlPdf").onclick  = ()=>{ closeAllMenus(); exportVectorPDF(); };
+$("dlPng").onclick  = ()=>{ closeAllMenus(); exportPNG(); };
+$("dlHtml").onclick = ()=>{ closeAllMenus(); exportInteractiveHTML(); };
+$("dlJson").onclick = ()=>{ closeAllMenus(); exportTopologyJSON(); };
+
+/* ── if this file was exported with a baked-in topology, load it ── */
+if(window.__BAKED__ && Array.isArray(window.__BAKED__.devices)){
+  const B = window.__BAKED__;
+  devices = B.devices;
+  if(B.adv) Object.keys(B.adv).forEach(k=>{ if(k in ADV) ADV[k] = !!B.adv[k]; });
+  if(B.spacing){ spacingMode = B.spacing; const ss=$("spacingSel"); if(ss) ss.value = B.spacing; }
+  suppressDerived = !!B.suppressDerived;
+  refreshAdvMenu(); syncAdvancedMode(); render();
+  setStatus(`Loaded an exported snapshot — ${devices.length} devices. Upload your own configs to replace it.`);
+}
 
 /* ── Theme toggle ────────────────────────── */
 const themeBtn = $("themeBtn");
@@ -2298,7 +3686,7 @@ function setTheme(t){
   themeBtn.textContent = t==="dark" ? "☀" : "☾";
 }
 themeBtn.onclick = ()=>setTheme(document.body.dataset.theme==="dark"?"light":"dark");
-setTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+setTheme("light");   /* light is the default; the ☀/☾ button switches it */
 
 /* ── Sample data (loaded ONLY on explicit request) ─ */
 const SAMPLE = [
@@ -2316,7 +3704,7 @@ const SAMPLE = [
      {name:"Gi0/0/0",role:"WAN uplink",ip:"203.0.113.10/30",vlan:"—",speed:"1G",duplex:"full",state:"up"},
      {name:"Gi0/0/1",role:"LAN → SD-WAN",ip:"10.10.0.1/24",vlan:"10",speed:"1G",duplex:"full",state:"up"},
      {name:"Cell0/1/0",role:"LTE backup",ip:"dhcp",vlan:"—",state:"standby"}]},
-  {id:"sdw1",hostname:"SDWAN-EDGE-01",type:"sdwan",model:"Fortinet FGT-60F",
+  {id:"sdw1",hostname:"SDWAN-EDGE-01",type:"sdwan",model:"FGT-60F",vendor:"Fortinet",
    mgmtIp:"10.10.0.2",mac:"00:1A:2B:3C:00:02",firmware:"FortiOS 7.2.8",uplink:"rtr1",
    wan:{ip:"10.10.0.2/24",gateway:"10.10.0.1",overlay:"IPsec overlay → HQ hub (2 tunnels)",sla:"SLA: voice 30ms / data 80ms"},
    lan:{ip:"10.10.20.1/24",vlan:"VLAN 20 (Corp), 30 (Voice), 40 (Guest)",dhcp:"scopes 20/30/40 local"},
@@ -2349,38 +3737,46 @@ const SAMPLE = [
      vtpDomain:"ACME",vtpMode:"client",poe:"67W budget / 13W used"},
    neighbors:[
      {localIf:"Gi1/0/1",remoteHost:"CORE-SW-01",remoteIf:"Gi1/0/2",via:"LLDP"},
-     {localIf:"Gi1/0/5",remoteHost:"BACK-AP-01",remoteIf:"eth0",via:"CDP"}],
+     {localIf:"Gi1/0/5",remoteHost:"BACK-AP-01",remoteIf:"eth0",via:"CDP"},
+     {localIf:"Gi1/0/6",remoteHost:"DESK-PHONE-01",remoteIf:"eth0",via:"LLDP-MED"},
+     {localIf:"Gi1/0/7",remoteHost:"FRONT-POS-01",remoteIf:"eth0",via:"LLDP"}],
    interfaces:[
      {name:"Gi1/0/1",role:"Uplink → CORE-SW-01",ip:"—",vlan:"trunk 20,30,40",speed:"1G",duplex:"full",state:"up"},
      {name:"Gi1/0/5",role:"AP → BACK-AP-01",ip:"—",vlan:"trunk 20,40",state:"up (PoE 12.7W)"},
-     {name:"Gi1/0/6",role:"Voice ATA",ip:"—",vlan:"access 30",state:"up"}]},
-  {id:"ap1",hostname:"STORE-AP-01",type:"ap",model:"UniFi U6-Pro",
+     {name:"Gi1/0/6",role:"Phone → DESK-PHONE-01",ip:"—",vlan:"access 30",state:"up (PoE 6.1W)"},
+     {name:"Gi1/0/7",role:"POS → FRONT-POS-01",ip:"—",vlan:"access 20",state:"up"}]},
+  {id:"ap1",hostname:"STORE-AP-01",type:"ap",model:"UniFi U6-Pro",vendor:"Ubiquiti",
    mgmtIp:"10.10.20.31",mac:"00:1A:2B:3C:00:21",firmware:"6.6.65",uplink:"sw1",
    lan:{ip:"10.10.20.31/24 (DHCP-res)",ssid:"CORP-WIFI (VLAN 20) · GUEST (VLAN 40)",radio:"2.4GHz ch1 / 5GHz ch44 (80MHz)"},
    interfaces:[
      {name:"eth0",role:"Uplink → CORE-SW-01 Gi1/0/10",ip:"10.10.20.31",vlan:"trunk 20,40",state:"up"},
      {name:"wifi0",role:"2.4 GHz radio",ip:"—",vlan:"20,40",state:"up · 14 clients"},
      {name:"wifi1",role:"5 GHz radio",ip:"—",vlan:"20,40",state:"up · 22 clients"}]},
-  {id:"ap2",hostname:"STORE-AP-02",type:"ap",model:"UniFi U6-Pro",
+  {id:"ap2",hostname:"STORE-AP-02",type:"ap",model:"UniFi U6-Pro",vendor:"Ubiquiti",
    mgmtIp:"10.10.20.32",mac:"00:1A:2B:3C:00:22",firmware:"6.6.65",uplink:"sw1",
    lan:{ip:"10.10.20.32/24 (DHCP-res)",ssid:"CORP-WIFI (VLAN 20) · GUEST (VLAN 40)",radio:"2.4GHz ch6 / 5GHz ch149 (80MHz)"},
    interfaces:[
      {name:"eth0",role:"Uplink → CORE-SW-01 Gi1/0/11",ip:"10.10.20.32",vlan:"trunk 20,40",state:"up"},
      {name:"wifi0",role:"2.4 GHz radio",ip:"—",vlan:"20,40",state:"up · 9 clients"},
      {name:"wifi1",role:"5 GHz radio",ip:"—",vlan:"20,40",state:"up · 17 clients"}]},
-  {id:"ap3",hostname:"BACK-AP-01",type:"ap",model:"UniFi U6-Lite",
+  {id:"ap3",hostname:"BACK-AP-01",type:"ap",model:"UniFi U6-Lite",vendor:"Ubiquiti",
    mgmtIp:"10.10.20.33",mac:"00:1A:2B:3C:00:23",firmware:"6.6.65",uplink:"sw2",
    lan:{ip:"10.10.20.33/24 (DHCP-res)",ssid:"CORP-WIFI (VLAN 20)",radio:"2.4GHz ch11 / 5GHz ch36 (40MHz)"},
    interfaces:[
      {name:"eth0",role:"Uplink → ACC-SW-01 Gi1/0/5",ip:"10.10.20.33",vlan:"trunk 20,40",state:"up"},
      {name:"wifi0",role:"2.4 GHz radio",ip:"—",vlan:"20",state:"up · 4 clients"},
      {name:"wifi1",role:"5 GHz radio",ip:"—",vlan:"20",state:"up · 6 clients"}]},
-  {id:"pc1",hostname:"FRONT-POS-01",type:"endpoint",model:"POS Workstation",
+  {id:"pc1",hostname:"FRONT-POS-01",type:"endpoint",model:"POS Workstation",vendor:"Elo Touch",
    mgmtIp:"10.10.20.101",mac:"00:1A:2B:3C:00:51",uplink:"sw2",
-   lan:{vlan:"access 20"}},
-  {id:"ph1",hostname:"DESK-PHONE-01",type:"endpoint",model:"VoIP Phone",
+   lan:{ip:"10.10.20.101/24 (DHCP)",vlan:"access 20"},
+   interfaces:[
+     {name:"eth0",role:"Uplink → ACC-SW-01 Gi1/0/7",ip:"10.10.20.101",vlan:"access 20",speed:"1G",duplex:"full",state:"up"}]},
+  {id:"ph1",hostname:"DESK-PHONE-01",type:"endpoint",model:"VoIP Phone",vendor:"Poly",
    mgmtIp:"10.10.30.21",mac:"00:1A:2B:3C:00:52",uplink:"sw2",
-   lan:{vlan:"access 30 (voice)"}}
+   lan:{ip:"10.10.30.21/24 (DHCP)",vlan:"access 30 (voice)"},
+   interfaces:[
+     {name:"eth0",role:"Uplink → ACC-SW-01 Gi1/0/6",ip:"10.10.30.21",vlan:"access 30",speed:"100M",duplex:"full",state:"up (PoE)"},
+     {name:"pc-port",role:"Passthrough → desk PC",ip:"—",vlan:"access 20",state:"up"}]}
 ];
 /* ── STANDARD SITE TEMPLATE (for future builds) ──────────────────
    Pattern borrowed from GNS3 multi-site labs: one site number {N}
@@ -2447,6 +3843,441 @@ $("sampleBtn").onclick = ()=>{
 
 /* start EMPTY — nothing renders until data is uploaded (or sample explicitly loaded) */
 render();
+
+
+/* ── Changelog viewer (version badge → modal) ─────────────────
+   The full CHANGELOG.md ships inside this file so the history is
+   available offline. Rendered with a tiny markdown-subset parser. */
+const CHANGELOG_MD = `# Changelog
+
+All notable changes to the Network Topology Visualizer are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [6.0.0] - 2026-07-24
+
+### Changed
+- **WAN details panel moved to the lower right**, mirroring the legend in the lower left, instead of opening from the top right where it covered the diagram's upper tiers. Its width is capped at \`calc(100vw - 300px)\` and its height at \`calc(100vh - 200px)\` so it can never reach across and cover the legend, or run off the bottom of a short window.
+- Panel heading updated to match the button: "WAN details — internet-facing edge of each device".
+
+## [5.9.0] - 2026-07-24
+
+### Fixed
+- **Link labels no longer jump to the other side of a node when a feature is toggled.** The collision avoider only ever nudged a label *downward*, so enabling VRRP / HA detail (which widens the badge strip and grows the box) pushed the WAN label of the Oakbrook pair past its node and out the bottom. It now searches both directions and takes the smaller displacement, so a label anchored above its node stays above it — verified across all four SD-WAN nodes with VRRP off and on.
+- **Vendor and location are on separate lines** inside the device box. Combined on one line they overflowed the box on sites with a long street address; vendor now sits on its own line with the address beneath it in the muted style.
+- **SD-WAN controller row clears the tier-label gutter.** The leftmost controller started at x=24, leaving only a 3px gap to the \`WAN / CLOUD\` tier label and visually colliding with it. The row now starts at x=132, past the gutter that \`WAN / CLOUD\`, \`SD-WAN OVERLAY\` and \`SWITCHING\` occupy, and still spreads evenly to the right edge.
+
+## [5.8.0] - 2026-07-24
+
+### Changed
+- **"WAN side" renamed to "WAN details"** on the toolbar button, its open state and its tooltip.
+- **Four Advanced features are now ticked by default**, so the useful detail is on screen the moment configs load rather than behind a menu: **Detailed link labels**, **Vendor & location**, **VRRP / HA detail**, and **Tunnel overlay**. The heavier port-map layers (port map strip, cross-connect chips, speed/duplex, port state, PoE, asset line, VLANs) stay off so the default view remains readable.
+- Added a **"Defaults"** shortcut button in the Advanced menu alongside All on / All off / Classic advanced, to return to that starting set.
+- \`advancedMode\` is synchronised at startup so the derived flag matches the ticked defaults before the first render.
+
+## [5.7.0] - 2026-07-24
+
+### Added
+- **SD-WAN controller datacentre names.** Controller hostnames carry a site prefix identifying the datacentre that hosts them; the tool now decodes it — \`SAC-*\` → **Sacramento DC**, \`SNT-*\` → **Chicago DC**. The datacentre appears on the controller node, in its tooltip, in the device detail panel next to each controller, and inside the "missing controller tunnel" notice (e.g. *missing SAC-SDWC-02 (Sacramento DC)*). The lookup table is a single named constant, so more datacentres can be added in one place.
+
+### Changed
+- **Controller row spread across the full canvas width.** The four controllers were laid out as a fixed-gap block centred on the canvas, which looked condensed on a wide multi-site diagram. They are now distributed evenly edge to edge — spacing went from 158px to 476px on the Pine Tree map — and the layout scales down correctly on a narrow single-site canvas. Cards widened slightly to fit the datacentre label.
+
+## [5.6.0] - 2026-07-24
+
+### Added
+- **Detailed legend** in the lower left, organised into sections and **context-aware — it only lists what is actually on screen**:
+  - **Devices** — the types present, plus a dashed swatch for *derived* nodes (named in a config but never uploaded, e.g. INTERNET and the SD-WAN controllers).
+  - **Links** — physical/evidence link, cross-connect (only when a lateral link exists), inferred-from-evidence (only when one is drawn), and a warning entry for an uplink whose target was not uploaded.
+  - **Tunnels (IPsec)** — IPsec bus, controller tunnel, external peer, missing/asymmetric, plus a note that branch-to-branch is broker-mediated and therefore never drawn point-to-point.
+  - **HA (VRRP)** — MASTER / BACKUP badge meanings and a note that a virtual address is a valid gateway served by the master.
+  - **Port map** — the ↑ ↔ ↓ trunk arrows and the ×n grouping convention.
+  - **Layout** — site column swatch with the location count.
+- The legend has a **collapsible header** and scrolls if it outgrows the window, so it never covers the diagram.
+
+## [5.5.0] - 2026-07-24
+
+### Changed
+- **Site location columns are now the permanent frame.** The site header strip is pinned to the top of the canvas (y=8) and never moves; the SD-WAN controller row, the IPsec bus and the INTERNET node all reposition themselves below it to stay clear. Previously enabling the tunnel overlay pushed the site headers down by 58px, so the fixed reference point moved whenever a detail layer was toggled.
+- Vertical order is now explicit and stable: **site headers → controller row → IPsec bus → INTERNET → device tiers**, with the first tier clearing whichever band ends lowest by 16px, scaled to node height.
+- Verified across simple, tunnels-only, tunnels+VRRP, classic advanced and all-eleven-features: site headers stay at y=8 in every case, with 0 overlaps.
+
+## [5.4.0] - 2026-07-24
+
+### Fixed
+- **INTERNET node no longer overlaps the site headers / IPsec bus.** The first device tier started immediately below the tunnel band, so the derived INTERNET box ran into the AZURE / DEERFIELD / OAKBROOK header strip and the IPsec bus label. Clearance is now reserved for the header strip and **scales with node height**, giving a consistent 16px gap whether the box is 52px (simple) or 108px (all eleven Advanced features on).
+- **Phantom cross-site link removed: SW-STK-OAKBROOK no longer draws to the Deerfield SD-WAN.** \`computeInferredLinks\` keeps its *own* IP index, which was never given the site scoping or the VRRP virtual addresses added to the solid-link engine in 5.0/5.1. So \`10.0.20.1\` looked like it belonged solely to Deerfield's management IP, and a dotted link was drawn across sites. That index now includes VRRP VIPs and is site-scoped, matching the solid-link rule — the Oakbrook stack resolves to its own site's VRRP master and no dotted link is produced.
+
+## [5.3.0] - 2026-07-24
+
+### Fixed
+- **Controller row no longer overlaps the site column headers.** Both were drawn at \`y=8\`, so the SD-WAN controller boxes sat on top of the AZURE / DEERFIELD / OAKBROOK labels. The site bands now start below the reserved controller band (headers moved to y=66, controllers occupy y=8–38) and the band height shrinks to match, so the two never share space.
+- **Tunnel count and "missing tunnel" labels moved onto their own riser**, at the midpoint between the bus and the device. They previously sat directly above each node, where they collided with the type badge, the new MASTER/BACKUP badge and the link's port label.
+- **Node badge strips are now reserved before any label is drawn**, so link labels route around the type/MASTER/BACKUP badges instead of landing on them — this also fixed a pre-existing collision introduced with the VRRP badges in 5.1.
+- Verified **0 overlapping boxes** in every Advanced combination: simple, tunnels only, VRRP only, classic advanced, and all eleven features on.
+
+## [5.2.0] - 2026-07-24
+
+### Fixed
+- **Tunnel overlay no longer overlaps the topology.** Two problems: the controller row was drawn at the top of the canvas with no space reserved, so it landed on top of the INTERNET node; and 4 sites × 4 controllers produced 16 crossing curves over the whole diagram.
+  - Dedicated bands are now reserved above (controllers) and below (external peers) the diagram, and released again when the overlay is switched off, so the layout is untouched when it is not in use.
+  - Controller tunnels are **bundled onto a bus** — one riser per gateway labelled \`n/N tunnels\`, one short stub per controller — instead of a full mesh. That is 19 crossing curves reduced to 13 mostly straight strokes with no crossings.
+  - Only the **interesting** pairs are drawn individually: a missing tunnel still gets its own broken line and an \`✗ no <controller>\` marker.
+  - Verified 0 overlaps between controller boxes, device nodes and every label.
+
+## [5.1.0] - 2026-07-24
+
+### Fixed
+- **VRRP virtual addresses are now real gateway owners.** A \`virtual-address\` is served by every member of the group, which previously looked like ambiguity and was discarded — so a switch pointing at a VRRP VIP resolved to nothing, or worse, to a same-subnet device at another site. The VIP now resolves to the group **master** (highest priority). This retires a false "off-site gateway drift" warning: Oakbrook's switch gateway \`10.0.20.1\` is that site's own VRRP grp 20 VIP, not Deerfield's interface address.
+
+### Added
+- **VRRP / HA detail** (Advanced): MASTER / BACKUP badges derived from priority rather than hostname, a compact in-box line leading with the VIP that is actually used as a gateway, and full per-group detail (VIP, real IP, priority, interface, preempt) in the device panel.
+- **Tunnel overlay** (Advanced): IPsec tunnels the configs declare — \`branch-sdwan\` profiles to each named SD-WAN **controller**, and \`site-to-site\` profiles to their external **peer**. Controllers and peers are referenced by name only, so they render as DERIVED nodes. Branch-to-branch is dynamic (\`b2b-sdwan\`) and is deliberately *not* drawn as point-to-point, only noted.
+- **Tunnel asymmetry checks**, reported in the load status: a site building fewer controller tunnels than its peers (with the gap drawn as a broken line), and a site-to-site tunnel configured on only part of an HA pair.
+
+## [5.0.0] - 2026-07-24
+
+### Added
+- **Multi-site support.** Devices are grouped into sites from what the configs state: an explicit \`! topo-site:\` directive, else the physical location string (which correctly merges an HA pair — PRI and BCK share one address, so they are one site), else a site label matched in the hostname.
+- **View picker** in the toolbar with five multi-site layouts, single-choice: **Site columns** (default — one column per location with tier rows aligned), **Stacked per-site**, **One site at a time** (with a site chooser), **Overlay overview** (one node per site around the shared SD-WAN fabric), and **Site grid** (a card per site with device counts). Clicking a site in the overview or grid drills into it.
+- **Duplicate-upload detection** — a byte-identical config uploaded twice is ignored with a notice instead of creating a phantom device.
+
+### Fixed
+- **Site-scoped gateway evidence.** Sites routinely reuse the same RFC1918 addressing (every branch has a \`10.0.20.1\`), which made a gateway match link a switch to a router at a *different site*. Gateway evidence is now matched only within a site; an owner found elsewhere is reported as **off-site gateway drift** and never drawn.
+- **In-site router fallback.** A switch whose gateway does not resolve inside its own site, but which has a port described as facing a router, now attaches to that site's primary gateway (the one not marked BCK/BACKUP/SEC) instead of being mistaken for a WAN edge.
+- **Distinguishable node labels.** Long org-prefixed hostnames all truncated to the same string (four routers each read \`SDWB-PINE-TREE-REA\`). A shared org token is now detected and dropped from the label; the full hostname stays in the detail panel and search.
+- **Unquoted location values** (\`set snmp system location northcentralus\`) are now parsed; previously only quoted values matched, so cloud sites lost their location and fell out of site grouping.
+
+## [4.9.0] - 2026-07-24
+
+### Changed
+- **Advanced options are now native checkboxes.** Each feature row (port map strip, detailed link labels, and the rest) uses a real \`<input type="checkbox">\` instead of a styled span, so the ticks are unmistakable and keyboard/screen-reader accessible.
+- **Advanced button restyled to stand out** — filled violet gradient with a glow, clearly distinct from the plain toolbar buttons.
+- **Light theme is now the default.** The ☀/☾ button still switches to dark at any time; the previous behaviour followed the OS preference.
+
+### Fixed
+- Clicking an Advanced option toggled it twice (the \`<label>\` forwarded the click to the checkbox, which bubbled back), leaving the setting unchanged. State is now driven by the checkbox \`change\` event.
+
+## [4.8.0] - 2026-07-24
+
+### Added
+- **Download menu.** The separate PDF and JSON buttons are now one \`⤓ Download ▾\` dropdown offering **PDF (vector)**, **Image (PNG)** at 2× scale, **Interactive HTML**, and **Topology JSON**.
+- **Interactive HTML export.** Writes a self-contained copy of the tool with the current devices, Advanced settings and spacing baked in, so it opens straight to that topology — offline, no upload step, with the animation, Advanced menu and clickable nodes intact.
+- **PNG export.** Rasterises the live SVG at 2× onto the theme background for slides and tickets.
+- **Advanced is now a checkbox dropdown** with nine independent features instead of one all-or-nothing toggle: port map strip, detailed link labels, VLANs in the box, vendor & location, port-to-port cross-connect, plus new **interface speed & duplex**, **port state colouring**, **PoE budget**, and **serial/firmware/uptime**. Shortcuts for All on / All off / Classic advanced; the button shows how many are active.
+
+### Changed
+- Node box height now grows per enabled in-box line (52 → 94px) instead of a fixed Advanced height, so nothing is taller than the selected detail requires.
+
+## [4.7.0] - 2026-07-24
+
+### Fixed
+- **AP and endpoint links now show their ports.** Port labels were gated to internet/router/sdwan/switch children only, so links down to access points and endpoints were never labelled even when both ports were known. Every link now labels both physical ends.
+- **Port labels no longer collide.** Labels register their bounding box and a colliding label is nudged clear, so a switch feeding several APs/endpoints no longer stacks its parent-side labels on top of each other.
+
+### Changed
+- **Sample data completed.** Added vendors to every sample device (Fortinet SD-WAN, Ubiquiti APs, Elo Touch POS, Poly phone) and gave the endpoints real interfaces plus matching access ports and LLDP neighbours on the access switch, so the sample demonstrates correct port labelling end to end.
+
+## [4.6.0] - 2026-07-24
+
+### Changed
+- **Device type badge moved to the top-left** of the node box (was top-right) for ROUTER / SD-WAN / SWITCH and every other type. The DERIVED badge moved to the top-right so the two never collide on the derived INTERNET node.
+
+## [4.5.0] - 2026-07-24
+
+### Changed
+- **Vendor now shown on every device in Advanced view**, not just gateways — switches and access points display their vendor too (e.g. Ubiquiti, Cisco), with the location still appended when the config states one.
+
+## [4.4.0] - 2026-07-24
+
+### Fixed
+- **Switch-side physical port now labelled.** \`portToward\` only recognised ports described SDWAN/UPLINK, so a port described as facing a router (e.g. EdgeSwitch \`0/1 "SNET-ROUTER"\`) produced no label. It now also matches router/gateway/firewall descriptions, and falls back to the single tagged trunk when a switch has exactly one.
+- **Both physical ends always labelled in Advanced.** The parent-side port label was skipped whenever the parent showed a port-chip strip, which left router-to-switch links with no labels at all. The label is now always drawn, anchored below the strip so it never collides with the chips.
+
+## [4.3.0] - 2026-07-24
+
+### Added
+- **Vendor & location in the device box (Advanced view).** Gateway devices (router / SD-WAN) now show their vendor inside the box, with the physical location appended when the config states one. Non-gateway devices show the location alone. The box grows by 14px only when a device actually has something to show.
+- **Location extraction** across parsers: \`snmp-server location\` / \`snmp location\` (IOS-style), \`set snmp system location\` (Versa), and \`service { snmp { location } }\` (EdgeOS). Location is shown only when the config states it — never inferred.
+
+## [4.2.0] - 2026-07-24
+
+### Added
+- **Ubiquiti EdgeOS parser.** EdgeRouter hierarchical curly-brace configs are now parsed natively: host-name, ethernet/vif interfaces with descriptions and addresses, VLANs from vif IDs, WAN circuits (static + DHCP backup), and the default-route gateway.
+- **Ubiquiti EdgeSwitch / FASTPATH parser.** \`network parms\` (mgmt IP + gateway), vlan database, and \`interface 0/N\` blocks with descriptions, PVIDs, and tagging.
+- **FASTPATH port map.** \`0/N\`-style ports now appear in the Advanced port-chip strip with correct numeric ordering, grouped runs, and trunk arrows; router/gateway-described uplinks point ↑.
+
+### Changed
+- Gateway link evidence now also accepts a port described as facing a router/gateway (e.g. \`0/1 SNET-ROUTER\`) as physical corroboration toward a router- or SD-WAN-type parent.
+
+## [4.1.0] - 2026-07-24
+
+### Added
+- **Clickable version badge.** The version number in the header now opens an in-app changelog viewer with the complete release history — embedded in the single file, works offline.
+
+## [4.0.0] - 2026-07-24
+
+### Changed
+- Landing animation is now a fixed 728×273px — it no longer scales with the window width.
+
+## [3.9.0] - 2026-07-24
+
+### Changed
+- Landing animation enlarged 40% (520px → 728px wide).
+
+## [3.8.0] - 2026-07-24
+
+### Changed
+- Landing animation sized slightly wider than the upload box (520px vs 480px) so it reads as a visual header over it.
+
+## [3.7.0] - 2026-07-24
+
+### Changed
+- **Landing layout.** The animated preview and upload zone are now anchored near the top of the canvas (34px from it) instead of vertically centered, and the animation is scaled to 70% of its previous size (448px wide).
+
+## [3.6.0] - 2026-07-24
+
+### Added
+- **Animated landing page.** The empty-state landing now shows a live demo topology above the upload zone — cloud → SD-WAN → firewall → switch → six endpoint icons (PC, printer, phone, POS, camera, WiFi) — running the bidirectional packet + ping-ring animation. Purely decorative; hides the moment real configs load, and collapses on short screens so the dropzone stays first.
+
+## [3.5.0] - 2026-07-24
+
+### Added
+- **Vector device icons.** Nodes now show drawn device pictures instead of text glyphs: cloud, router (with firewall variant auto-detected by name), SD-WAN globe, switch, access point, and endpoint sub-kinds inferred from hostname/description (PC, printer, phone, POS, security camera, WiFi/mobile). All inline SVG line-art in the tier color — offline, crisp at any zoom, and preserved in the vector PDF export.
+- **Bidirectional packet animation with ping rings.** Every connection now shows a request packet (in the child device's color) travelling parent → child, a radiating ping ring on arrival, then a same-color outlined response returning child → parent with a ring at the parent. Applies to uplinks and the switch cross-connect (including the Advanced chip-to-chip link), staggered per link, honoring reduced-motion.
+
+### Changed
+- Replaced the one-way comet (v3.4) with the round-trip animation.
+
+## [3.4.0] - 2026-07-24
+
+### Added
+- **Center-screen upload zone.** When no devices are loaded, the canvas shows a large drop target (drag files or click to browse) with the supported formats and a collapsible help note. The toolbar upload button remains.
+- **Directional connection flow.** Connections now show a comet plus brighter directional flow travelling from the cloud/internet toward the edge device (gateway / router / SD-WAN / firewall) and onward down the hierarchy, indicating traffic direction into the network.
+
+## [3.3.0] - 2026-07-24
+
+### Changed
+- **VLANs shown only in Advanced view.** The VLAN line inside each device box now appears only when Advanced is ON; the default view stays clean. The node box also shrinks back to its compact height in the default view (no empty line) and expands to fit the VLAN line in Advanced.
+
+## [3.2.0] - 2026-07-24
+
+### Changed
+- **Adaptive footer spacing.** The gap between the two credits now scales with the window width via clamp(12px, 4vw, 64px) and wraps to separate lines (hiding the middle dot) on very narrow screens, so the names can never overlap at any size.
+
+## [3.1.0] - 2026-07-24
+
+### Added
+- **Vector PDF export.** New "⤓ PDF (vector)" button serializes the live SVG (with theme colors resolved) into a print document sized to the diagram and opens Save-as-PDF. The topology is embedded as vector, so it stays crisp at any zoom or print size.
+
+### Changed
+- **Footer redesigned.** Credits now render as a centered single line with a fixed-gap dot separator and inline LinkedIn icons, replacing the old block/spacer layout that could crowd or overlap.
+
+## [3.0.0] - 2026-07-24
+
+### Added
+- **Collapsible load-status details.** The load summary ("Loaded N devices…") now shows as a compact one-line bar with a Show/Hide details toggle. The full breakdown (links established, inferences, notices) is collapsed by default and expands on demand; single-line messages hide the toggle.
+
+## [2.9.0] - 2026-07-24
+
+### Changed
+- **Advanced cross-connect matches other connections.** The chip-to-chip switch link in Advanced view now uses the same solid edge base and animated flow overlay as every other connection, and labels each end with its port name beside the owning switch (port-near-owner) plus a centered media note — instead of the old dotted line with one combined middle label.
+
+## [2.8.0] - 2026-07-24
+
+### Changed
+- **VLANs shown inside the device box.** The VLAN list now renders as a line inside each device (below the management IP) instead of floating beside/below the node; node height increased to fit it and the port-count moved onto the IP line. Cleaner and keeps VLAN info attached to its device.
+
+## [2.8.0] - 2026-07-24
+
+### Changed
+- **VLANs shown inside the device box.** The VLAN list moved from beside/below the node to a line inside the box (below the management IP); node height increased to fit it, and the port-count moved onto the IP line so nothing overlaps.
+
+## [2.7.0] - 2026-07-24
+
+### Changed
+- **Cross-connect drawn identically to other connections.** The confirmed switch-to-switch link now uses the same solid edge base and animated flow overlay as the SD-WAN/uplink connections (previously a lighter, distinct style), so every physical cable looks and animates the same. Only genuinely inferred links remain dotted.
+
+## [2.6.0] - 2026-07-24
+
+### Added
+- **Cross-connect flow animation.** The physical switch-to-switch link now carries the same animated flow overlay as the SD-WAN→switch uplinks, so all confirmed cables read consistently.
+
+### Changed
+- **+150px horizontal spacing between same-tier peers.** Nodes sharing a tier (e.g. the two switches) are now placed at a fixed column pitch centered on the canvas, giving 150px more breathing room so their labels and VLAN text never crowd.
+
+## [2.5.0] - 2026-07-24
+
+### Changed
+- **Spacing presets increased by 50px** across the board for more visual breathing room: Tight 168, Comfortable 200 (default), Airy 235, Spacious 270, Adaptive 178 base.
+
+## [2.4.0] - 2026-07-24
+
+### Added
+- **Spacing dropdown** in the toolbar with five vertical-spacing presets: Tight (118px), Comfortable (150px, default), Airy (185px), Spacious (220px), and Adaptive (128px base + extra only on rows whose links carry port labels). Switches live without reloading.
+
+## [2.3.0] - 2026-07-24
+
+### Fixed
+- **Physically-accurate switch peering.** A switch whose gateway is only reachable through a cross-connect peer (no physical uplink port of its own) is no longer drawn with a phantom link to the SD-WAN. Such switches stay same-tier peers, connected by the cross-connect; the gateway is recorded as an L3 detail.
+- **Gateway links require a physical port.** Gateway-chain promotion (solid or dotted) now only draws a link when the child also has a corroborating physical port (WAN/uplink/SDWAN interface or CDP/LLDP neighbor) toward that parent.
+- **No overlapping labels.** VLAN text moved below each node (was to the right, colliding with adjacent switches); link port labels separated so parent- and child-side labels never overlap in tight tier gaps.
+
+### Changed
+- **Port labels sit beside their own device.** The cross-connect now shows a \`gi22\` label next to each switch (port-near-device) instead of one combined label in the middle, with a small media note (\`Gigabit\`) at center.
+- Confirmed physical cross-connect is drawn as a **solid** line rather than dotted.
+
+## [2.2.0] - 2026-07-24
+
+### Fixed
+- **SD-WAN edge now shows its port toward the switch.** Previously only the switch end of the SD-WAN↔switch link was labeled (\`gi1\`); the parent's port is now resolved to the LAN sub-interface that owns the child's gateway (e.g. Versa \`vni-0/2.20\`), so both ends of every link show a port. Shared parent ports (one LAN interface serving multiple switches) are labeled once to avoid duplicate/overlapping labels.
+
+## [2.1.0] - 2026-07-23
+
+### Added
+- **Port names in the default view.** Each link end now shows the concise physical port name (\`gi1\`, \`vni-0/0.0\`, \`gi22 ↔ gi22\`) without needing Advanced mode.
+
+## [2.0.0] - 2026-07-23
+
+### Added
+- **Physical port-to-port cross-connect.** In Advanced mode, the dotted switch-to-switch link now connects the actual \`gi22\` port chip on one switch to the \`gi22\` chip on the other, with anchor dots and a \`gi22 ↔ gi22 · Gigabit\` label — representing the real cabling rather than a link between node boxes.
+
+### Changed
+- Cross-connect rendering moved to a post-node pass so it can anchor to port-chip positions and draw above the strips.
+
+## [1.9.0] - 2026-07-23
+
+### Fixed
+- **No more overlap** in the Advanced port map: adjacent switch strips are spaced apart, redundant VLAN side-text is suppressed when a strip is shown, parent-side link labels are skipped over strips, and the cross-connect routes below the strips.
+
+### Changed
+- **Subtler upload status.** Informational notices no longer turn the whole message red; the text stays calm with a soft amber accent bar.
+
+## [1.8.0] - 2026-07-23
+
+### Added
+- **Advanced port map.** Each switch grows a per-port chip strip showing every populated port with its description, VLAN-colored border, and trunk direction arrows (uplink ↑, cross-connect ↔, AP ↓). Adjacent identical ports consolidate (\`gi1-9 POS ×9\`); empty ports collapse.
+
+## [1.7.0] - 2026-07-23
+
+### Added
+- **Advanced view toggle.** Shows the physical port at each end of every link (interface name, description, media/speed).
+- **Media detection** on links: \`gi\` → Gigabit, \`fa\` → FastEthernet, \`te\` → 10-Gigabit, \`vni\` → Versa, \`eth\` → Ethernet.
+- Cross-connect links labeled with port numbers and media (\`gi22 ↔ gi22 · Gigabit\`).
+
+## [1.6.0] - 2026-07-23
+
+### Added
+- **Versa SD-WAN parser** for \`set\`-syntax configs: identity, WAN circuits, LAN sub-interface gateways, VLANs, NAT/CGNAT, and SD-WAN controllers.
+- **Cisco Small Business / CBD switch support** (quoted hostnames, \`management vlan ip-address\`).
+- **Switch cross-connect detection** from matching \`CROSSCONNECT\` trunk descriptions.
+- SD-WAN facts section in the detail panel.
+
+### Fixed
+- Classification no longer misreads a switch as SD-WAN because a port is *described* "SDWAN-LAN", nor as an AP because of a "GUEST-WLAN" VLAN name.
+
+## [1.5.0] - 2026-07-22
+
+### Added
+- **Credits footer** with LinkedIn links for the author and contributor.
+
+### Changed
+- Footer refined through several iterations to a single centered line with a fixed gap; rebuilt on plain inline layout to eliminate a flexbox overlap bug.
+
+## [1.4.0] - 2026-07-22
+
+### Added
+- **Evidence promotion.** Unambiguous evidence (unique gateway owner, single CDP/LLDP neighbor, including reverse-direction) is promoted to a solid uplink so bare uploads self-assemble into a connected diagram, matching the built-in sample. Ambiguous evidence stays dotted.
+
+## [1.3.0] - 2026-07-22
+
+### Added
+- **Derived INTERNET node** when a config proves a WAN edge (default route + WAN interface); dashed, tagged, removable, and traceable to source lines.
+- **Gateway-chain hierarchy** — the device owning another's gateway IP renders above it. Immune to type misclassification.
+
+### Changed
+- Restored the functional device color palette (cyan switch, amber router, violet SD-WAN, green AP, gold endpoint) on top of the Coeo-branded chrome.
+
+## [1.2.0] - 2026-07-22
+
+### Added
+- **Coeo branding** — logo in the header (theme-switched), navy/blue color scheme on the application shell, dark and light themes.
+
+## [1.1.0] - 2026-07-21
+
+### Fixed
+- **Backwards-link handling.** A link recorded child→parent is auto-corrected and flagged rather than inverting the hierarchy.
+
+### Changed
+- Rows locked to device type with the empty-tier collapse, so a router always renders above a switch.
+
+## [1.0.0] - 2026-07-21
+
+### Added
+- Initial hierarchy engine, tiered top-down layout, and the rule that links can reorder rows.
+
+## [0.x] - 2026-07-21
+
+### Added
+- Normalized device schema; JSON and raw-text config ingestion; tiered layout; color-coded device classes and legend; click-for-detail panel; search by hostname/IP/MAC; WAN-side overview; port labels on link ends; VLAN text beside nodes; device-type and uplink overrides; new-site template stamping; JSON export; inferred-links toggle.
+
+[2.1.0]: https://example.com/releases/2.1.0
+[2.0.0]: https://example.com/releases/2.0.0
+[1.9.0]: https://example.com/releases/1.9.0
+[1.8.0]: https://example.com/releases/1.8.0
+[1.7.0]: https://example.com/releases/1.7.0
+[1.6.0]: https://example.com/releases/1.6.0
+[1.5.0]: https://example.com/releases/1.5.0
+[1.4.0]: https://example.com/releases/1.4.0
+[1.3.0]: https://example.com/releases/1.3.0
+[1.2.0]: https://example.com/releases/1.2.0
+[1.1.0]: https://example.com/releases/1.1.0
+[1.0.0]: https://example.com/releases/1.0.0
+`;
+function renderChangelog(){
+  const body = $("clBody");
+  if(body.childNodes.length) return;              // render once
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const inline = s => esc(s)
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\u0060(.+?)\u0060/g,"<code>$1</code>");
+  let out = [], listOpen = false, isFirstVer = true;
+  const closeList = ()=>{ if(listOpen){ out.push("</ul>"); listOpen=false; } };
+  CHANGELOG_MD.split("\n").forEach(line=>{
+    let m;
+    if((m = line.match(/^## \[([^\]]+)\](?:\s*-\s*(.*))?/))){
+      closeList();
+      const cur = isFirstVer ? ' <span class="cur">CURRENT</span>' : '';
+      out.push('<div class="cl-ver"><b>v'+esc(m[1])+'</b><span class="d">'+esc(m[2]||'')+'</span>'+cur+'</div>');
+      isFirstVer = false;
+    } else if((m = line.match(/^### (.+)/))){
+      closeList(); out.push('<h4>'+esc(m[1])+'</h4>');
+    } else if((m = line.match(/^- (.+)/))){
+      if(!listOpen){ out.push('<ul>'); listOpen=true; }
+      out.push('<li>'+inline(m[1])+'</li>');
+    } else if(/^# /.test(line) || /^\[.*\]:/.test(line)){
+      /* skip the top title and link-reference lines */
+    } else if(line.trim()){
+      closeList(); out.push('<p>'+inline(line)+'</p>');
+    }
+  });
+  closeList();
+  body.innerHTML = out.join("");
+}
+function openChangelog(){ renderChangelog(); $("clOverlay").classList.add("open"); $("clClose").focus(); }
+function closeChangelog(){ $("clOverlay").classList.remove("open"); }
+{
+  const vb = $("verBtn");
+  if(vb){
+    vb.onclick = openChangelog;
+    vb.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openChangelog(); } };
+  }
+  $("clClose").onclick = closeChangelog;
+  $("clOverlay").addEventListener("click", e=>{ if(e.target===$("clOverlay")) closeChangelog(); });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeChangelog(); });
+}
+
 </script>
 </body>
 </html>
