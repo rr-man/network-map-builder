@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Topology Map — v3.3.0</title>
+<style>
+  :root, body[data-theme="dark"]{
+    --bg:#0f1b30;               /* deep Coeo navy */
+    --panel:#1c355e;            /* brand navy #1c355e */
+    --panel-edge:#2e4a7a;
+    --ink:#e8eef7;
+    --muted:#8fa5c6;
+    --faint:#54709c;
+    --link:#3a5685;
+    --brand:#416ba9;            /* Coeo blue */
+    --c-internet:#8fa5c6;
+    --c-router:#f0a548;
+    --c-sdwan:#a78bfa;
+    --c-switch:#4fc3d9;         /* functional cyan restored */
+    --c-ap:#6fce8f;
+    --c-endpoint:#d6c06a;
+    --c-unknown:#c78f9e;
+    --link-inf:#8fb3e8;
+    --hl:#ffd67e;
+    --warn:#ef7d7d;
+    --shadow:rgba(4,10,22,.5);
+    --head-grad:linear-gradient(180deg,#16294a,#0f1b30);
+  }
+  body[data-theme="light"]{
+    --bg:#f2f6fb;
+    --panel:#ffffff;
+    --panel-edge:#ccd8ea;
+    --ink:#1c355e;              /* brand navy as ink */
+    --muted:#54709c;
+    --faint:#93a9c9;
+    --link:#b3c5df;
+    --brand:#416ba9;
+    --c-internet:#5f7599;
+    --c-router:#c97e1a;
+    --c-sdwan:#7c5ce0;
+    --c-switch:#1e93ad;         /* functional teal restored */
+    --c-ap:#2e9e5b;
+    --c-endpoint:#8a7420;
+    --c-unknown:#a05a70;
+    --link-inf:#3f76ad;
+    --hl:#b58900;
+    --warn:#c94f4f;
+    --shadow:rgba(28,53,94,.16);
+    --head-grad:linear-gradient(180deg,#ffffff,#f2f6fb);
+  }
+  :root{
+    --mono:ui-monospace,'Cascadia Mono','SF Mono',Consolas,'Liberation Mono',monospace;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--ink);font-family:var(--sans);
+    display:flex;flex-direction:column;overflow:hidden;
+    transition:background .2s,color .2s;
+  }
+
+  /* ── Header ─────────────────────────────── */
+  header{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:12px 20px;border-bottom:1px solid var(--panel-edge);
+    background:var(--head-grad);
+  }
+  .logo{height:26px;width:auto;display:none}
+  body[data-theme="dark"] .logo.dark{display:block}
+  body[data-theme="light"] .logo.light{display:block}
+  header h1{
+    font-family:var(--mono);font-size:14px;font-weight:600;
+    letter-spacing:.18em;text-transform:uppercase;
+  }
+  header h1 .dim{color:var(--muted);font-weight:400}
+  .ver{
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    border:1px solid var(--panel-edge);border-radius:4px;padding:2px 8px;
+  }
+  .btn{
+    font-family:var(--mono);font-size:11.5px;padding:7px 12px;cursor:pointer;
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:6px;
+    color:var(--ink);
+  }
+  .btn:hover{border-color:var(--muted)}
+  .btn.primary{border-color:var(--brand)}
+
+  /* toolbar select (spacing dropdown) */
+  .sel-wrap{display:inline-flex;align-items:center;gap:6px;position:relative}
+  .sel-lbl{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .sel{
+    font-family:var(--mono);font-size:11.5px;padding:7px 26px 7px 10px;cursor:pointer;
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:6px;color:var(--ink);
+    appearance:none;-webkit-appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+    background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  }
+  .sel:hover{border-color:var(--muted)}
+  .sel:focus{outline:none;border-color:var(--brand)}
+
+  /* ── Tooltips (data-tip) ─────────────────── */
+  [data-tip]{position:relative}
+  [data-tip]::after{
+    content:attr(data-tip);
+    position:absolute;top:calc(100% + 9px);left:0;
+    width:max-content;max-width:290px;
+    padding:9px 11px;
+    background:var(--panel);color:var(--ink);
+    border:1px solid var(--panel-edge);border-radius:7px;
+    box-shadow:0 6px 22px var(--shadow);
+    font-family:var(--sans);font-size:11.5px;font-weight:400;
+    line-height:1.5;letter-spacing:0;text-align:left;white-space:normal;
+    opacity:0;transform:translateY(-3px);pointer-events:none;
+    transition:opacity .13s ease,transform .13s ease;transition-delay:0s;
+    z-index:60;
+  }
+  [data-tip]::before{                       /* little arrow */
+    content:"";position:absolute;top:calc(100% + 3px);left:14px;
+    border:5px solid transparent;border-bottom-color:var(--panel-edge);
+    opacity:0;transition:opacity .13s ease;z-index:61;pointer-events:none;
+  }
+  [data-tip]:hover::after,[data-tip]:focus-within::after{
+    opacity:1;transform:translateY(0);transition-delay:.35s;
+  }
+  [data-tip]:hover::before,[data-tip]:focus-within::before{
+    opacity:1;transition-delay:.35s;
+  }
+  /* keep right-edge tips (search) from overflowing the viewport */
+  .search-wrap[data-tip]::after{left:auto;right:0}
+  .search-wrap[data-tip]::before{left:auto;right:14px}
+  #themeBtn{width:34px;text-align:center;padding:7px 0}
+  .search-wrap{margin-left:auto;position:relative}
+  #search{
+    width:250px;max-width:55vw;padding:7px 10px 7px 30px;
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:6px;
+    color:var(--ink);font-family:var(--mono);font-size:12px;outline:none;
+  }
+  #search:focus{border-color:var(--brand)}
+  #search::placeholder{color:var(--faint)}
+  .search-wrap::before{
+    content:'⌕';position:absolute;left:9px;top:50%;transform:translateY(-54%);
+    color:var(--muted);font-size:15px;
+  }
+  #searchCount{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:64px}
+
+  /* ── Status bar ─────────────────────────── */
+  /* status bar — a compact summary line with a show/hide toggle;
+     the full details are collapsed by default. */
+  #statusBar{
+    display:none;align-items:center;gap:10px;
+    font-family:var(--mono);font-size:11px;padding:6px 20px;
+    border-bottom:1px solid var(--panel-edge);color:var(--muted);
+  }
+  #statusBar.show{display:flex}
+  #statusBar.err{
+    border-left:3px solid var(--hl);padding-left:17px;
+    background:color-mix(in srgb, var(--hl) 7%, transparent);
+  }
+  #statusSummary{flex:0 0 auto}
+  #statusToggle{
+    cursor:pointer;font-family:var(--mono);font-size:10.5px;
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:5px;
+    color:var(--muted);padding:3px 9px;user-select:none;
+  }
+  #statusToggle:hover{border-color:var(--muted);color:var(--ink)}
+  #status{
+    font-family:var(--mono);font-size:11px;padding:2px 20px 8px;
+    border-bottom:1px solid var(--panel-edge);color:var(--muted);
+    display:none;white-space:pre-wrap;
+  }
+  #status.show{display:block}
+  #status.err{
+    color:var(--muted);
+    border-left:3px solid var(--hl);
+    padding-left:17px;
+    background:color-mix(in srgb, var(--hl) 7%, transparent);
+  }
+
+  /* ── Canvas ─────────────────────────────── */
+  main{flex:1;display:flex;min-height:0;position:relative}
+  #canvasWrap{flex:1;overflow:auto;position:relative}
+  svg{display:block;min-width:100%}
+
+  #emptyState{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;text-align:center;
+    color:var(--muted);padding:24px;
+  }
+  #emptyState .big{font-size:38px;color:var(--faint)}
+  #emptyState h2{font-family:var(--mono);font-size:14px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink)}
+  #emptyState p{font-size:12.5px;max-width:440px;line-height:1.6}
+  #emptyState code{font-family:var(--mono);background:var(--panel);
+    border:1px solid var(--panel-edge);border-radius:4px;padding:1px 6px}
+
+  body.dragging #canvasWrap{outline:2px dashed var(--c-switch);outline-offset:-8px}
+
+  .tier-label{
+    font-family:var(--mono);font-size:10px;letter-spacing:.22em;
+    fill:var(--faint);text-transform:uppercase;
+  }
+  .tier-line{stroke:var(--panel-edge);stroke-width:1;stroke-dasharray:2 6}
+
+  .edge{stroke:var(--link);stroke-width:1.6;fill:none}
+  .edge-label{
+    font-family:var(--mono);font-size:9px;fill:var(--muted);
+    text-anchor:middle;letter-spacing:.04em;
+  }
+  .edge-label-bg{fill:var(--bg);opacity:.85;rx:3}
+  .edge-inferred{
+    stroke:var(--link-inf);stroke-width:1.5;fill:none;
+    stroke-dasharray:2 5;stroke-linecap:round;opacity:.9;
+  }
+  .edge-inferred.edge-xconn-solid{
+    stroke-dasharray:none;stroke-width:2;opacity:1;   /* confirmed physical cable */
+  }
+  .edge-flow{
+    stroke:var(--muted);stroke-width:1.6;fill:none;opacity:.55;
+    stroke-dasharray:3 9;animation:flow 1.6s linear infinite;
+  }
+  @keyframes flow{to{stroke-dashoffset:-12}}
+  @media (prefers-reduced-motion:reduce){.edge-flow{animation:none;opacity:0}}
+
+  .node{cursor:pointer}
+  .node rect.body{fill:var(--panel);stroke-width:1.4;transition:filter .15s}
+  .node:hover rect.body{filter:brightness(1.12)}
+  .node.selected rect.body{stroke-width:2.6;filter:brightness(1.12)}
+  .node.dimmed{opacity:.22}
+  .node.hit rect.body{stroke:var(--hl)!important;stroke-width:2.4}
+  .node.orphan rect.body{stroke-dasharray:5 4}
+  .node.derived rect.body{stroke-dasharray:5 4;opacity:.95}
+  .node text.host{font-family:var(--mono);font-size:12px;font-weight:600;fill:var(--ink)}
+  .node text.ip{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+  .node text.glyph{font-size:15px}
+  .node text.tagtxt{
+    font-family:var(--mono);font-size:8px;letter-spacing:.12em;fill:var(--bg);font-weight:700;
+  }
+  .node text.orphmark{font-size:11px;fill:var(--warn)}
+
+  /* ── Legend ─────────────────────────────── */
+  #legend{
+    position:absolute;left:16px;bottom:14px;
+    background:var(--panel);border:1px solid var(--panel-edge);
+    border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:11px;
+    display:none;flex-direction:column;gap:6px;box-shadow:0 4px 16px var(--shadow);
+  }
+  #legend.show{display:flex}
+  #legend .li{display:flex;align-items:center;gap:8px;color:var(--muted)}
+
+  /* ── WAN overview panel ─────────────────── */
+  #wanPanel{
+    position:absolute;right:16px;top:40px;max-width:min(560px,86vw);
+    background:var(--panel);border:1px solid var(--panel-edge);
+    border-radius:8px;padding:12px 14px;display:none;
+    box-shadow:0 6px 22px var(--shadow);z-index:3;overflow:auto;max-height:60vh;
+  }
+  #wanPanel.show{display:block}
+  #wanPanel h3{
+    font-family:var(--mono);font-size:10px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:10px;
+  }
+  table.wan{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px}
+  table.wan th{
+    text-align:left;color:var(--faint);font-weight:400;letter-spacing:.08em;
+    text-transform:uppercase;font-size:9px;padding:0 12px 6px 0;white-space:nowrap;
+  }
+  table.wan td{
+    padding:6px 12px 6px 0;border-top:1px solid var(--panel-edge);
+    white-space:nowrap;color:var(--ink);
+  }
+  table.wan td.dim{color:var(--muted)}
+  table.wan tr.row{cursor:pointer}
+  table.wan tr.row:hover td{background:var(--bg)}
+  table.wan td .dot{
+    display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;
+  }
+  #legend .sw{width:11px;height:11px;border-radius:3px;flex:none}
+  #legend .ln{width:22px;height:0;flex:none}
+  #legend .ln.solid{border-top:2px solid var(--link)}
+  #legend .ln.dotted{border-top:2px dotted var(--link-inf)}
+
+  .evi{
+    font-family:var(--mono);font-size:10px;color:var(--muted);
+    margin:2px 0 8px;padding-left:10px;border-left:2px solid var(--link-inf);
+    word-break:break-word;
+  }
+  .basis-tag{font-family:var(--mono);font-size:9px;color:var(--faint);margin-left:6px}
+  select.uplink-sel{
+    width:100%;padding:7px 8px;font-family:var(--mono);font-size:11.5px;
+    background:var(--bg);color:var(--ink);border:1px solid var(--panel-edge);
+    border-radius:6px;outline:none;
+  }
+  select.uplink-sel:focus{border-color:var(--brand)}
+
+  /* ── Detail Panel ───────────────────────── */
+  #panel{
+    width:360px;max-width:88vw;flex:none;border-left:1px solid var(--panel-edge);
+    background:var(--panel);overflow-y:auto;
+    transform:translateX(100%);transition:transform .22s ease;
+    position:absolute;right:0;top:0;bottom:0;box-shadow:-12px 0 28px var(--shadow);
+  }
+  #panel.open{transform:translateX(0)}
+  .p-head{
+    padding:16px 18px 14px;border-bottom:1px solid var(--panel-edge);
+    display:flex;align-items:flex-start;gap:12px;position:sticky;top:0;
+    background:var(--panel);z-index:2;
+  }
+  .p-led{width:10px;height:10px;border-radius:50%;margin-top:5px;flex:none;
+    box-shadow:0 0 8px currentColor}
+  .p-title{flex:1}
+  .p-title .h{font-family:var(--mono);font-size:15px;font-weight:700;word-break:break-all}
+  .p-title .s{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono);
+    letter-spacing:.1em;text-transform:uppercase}
+  #closeBtn{
+    background:none;border:1px solid var(--panel-edge);border-radius:6px;
+    color:var(--muted);font-size:14px;width:28px;height:28px;cursor:pointer;flex:none;
+  }
+  #closeBtn:hover{color:var(--ink);border-color:var(--muted)}
+  .p-sec{padding:14px 18px;border-bottom:1px solid var(--panel-edge)}
+  .p-sec h3{
+    font-family:var(--mono);font-size:10px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:10px;
+  }
+  .p-warn{color:var(--warn);font-family:var(--mono);font-size:11px}
+  .kv{display:grid;grid-template-columns:110px 1fr;row-gap:7px;font-size:12px}
+  .kv .k{color:var(--muted)}
+  .kv .v{font-family:var(--mono);word-break:break-all}
+  .chip{
+    display:inline-block;font-family:var(--mono);font-size:11px;
+    background:var(--bg);border:1px solid var(--panel-edge);border-radius:5px;
+    padding:3px 9px;margin:0 6px 6px 0;cursor:pointer;color:var(--ink);
+  }
+  .chip:hover{border-color:var(--muted)}
+  .chip .arrow{color:var(--faint);margin-right:5px}
+  table.if{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px}
+  table.if th{
+    text-align:left;color:var(--faint);font-weight:400;letter-spacing:.08em;
+    text-transform:uppercase;font-size:9px;padding:0 8px 6px 0;
+  }
+  table.if td{padding:5px 8px 5px 0;border-top:1px solid var(--panel-edge)}
+  table.if td.dim{color:var(--muted)}
+
+  /* ── Credits footer — one centered line, fixed 24px gap ── */
+  #credits{
+    display:flex;justify-content:center;align-items:center;
+    gap:clamp(12px, 4vw, 64px);          /* adaptive: grows with width, never < 12px */
+    flex-wrap:wrap;row-gap:4px;
+    padding:8px 24px;border-top:1px solid var(--panel-edge);
+    background:var(--head-grad);flex:none;
+    font-family:var(--mono);font-size:11px;color:var(--muted);line-height:20px;
+  }
+  #credits .credit{display:inline-flex;align-items:center;white-space:nowrap;min-width:0}
+  #credits .lbl{color:var(--muted)}
+  #credits .dot{color:var(--faint);user-select:none}
+  #credits a{display:inline-flex;align-items:center;color:var(--ink);text-decoration:none;white-space:nowrap}
+  #credits a:hover{color:var(--brand)}
+  .li-icon{
+    width:12px;height:12px;fill:#0a66c2;
+    display:inline-block;vertical-align:-2px;margin-right:5px;
+  }
+  /* when the two credits wrap onto separate lines, the middle dot is redundant */
+  @media (max-width:520px){ #credits .dot{display:none} }
+  @media print{#credits{display:flex}}
+
+  @media print{
+    header,#panel,#legend,#status,#statusBar{display:none}
+    body{background:#fff;color:#000}
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<header>
+  <img class="logo dark" alt="Coeo" src="data:image/png;base64,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"><img class="logo light" alt="Coeo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAL8AAAA4CAYAAACsXylmAAAkQUlEQVR42tV9e3hc1XXvb629z8xIfhMsY8svwIbGBDBIsiEXKgNJCyRNk7QyEFtyUopJA4SQV5vcJpKa3uZLGiBAeYZA5AcPqwk3j5u4TYKtPAjYFgYMSoLNw1jyk9jY1mNmzt5r3T/OGVmSLXtGL6vn++azPBrNWee311p7vTdhUFcto3I9o6nJ5d45feG1U7wUVQjpRVCZD+BMBaaQYhwIFgAUGpLSIQXtZqKtSrSZQM8q06bWZ7+7v/vrKystmhYJUC8YsutomqdfdP0pJGG5gi6C4kJVzCHoaUo6nkABIqKdAoeIsBdEWwn0ghD9zmewafcLj+4bTpqrqtYYAGhsXOy7b3PrU7Ot9wsFehGg55JitgKnquo4IjAAqGoGRO8QURsp/qig55Xod+lAnn/2zsVd3d9Vu8421S/yAOmw46y+TJUuhsqFUMxBvzjTHhC2kdJmYTznA9q4+zdDizMN+O+qqhiNjR4AppZdd6rl5AcU+hEAFxNxCTFDVQFVKATQPrgSgYgBEIgIKh6quhNEvwXpDxKu82evNzcejFffoLFRAAxmcXrRfMqCJePHSHCVMj4KlUuIeBqxiWiGQrUfmsEx7THNkN0APaPETxHxT7uFdyhorq3lWtShvp4kx/BG5MOq8iEAF7KxE4gNIAJVDxWJ6O6DMZEBcYS1d2kQaCsRPa1E33/XLv90TqiqqtaYngI29DjrJUQ0AJwFCt8D5/aftj7bOGicaQBqyOQebFpF9VlM9lOAfIxNYjJUoeKg6hVKAiiBQPFt+t4rloxY2xCYiInYAgSod20EXZUhPLDnuYY3+957oDRPLaueaZhvJFANGTsdQEyz5KSUYnKpH5oBhQKkvWkmiA93A/oYeb1vR/OK1wZDc09GvOKmNRcrm5sB/bBNFBeLOEiYgYgISBVKRFCKSO5Lc4SxUsRhBDJsApggCfEO4t0WBb7Tgc6GDfdUHwKUamvrqL5+ABq1L87WfpJEq4cWZ0C8203Aani5fzA400AkumThtVMSmvwSgW4gExSrD6EiPsfEg9hRYmAAYjZkAogPD4L0PpPGN7e/2PBOgZLeTfMpC5aMH4Pg8wrczCaYNMw0txPRA86lv7Gr+fG3C6K5tpZRX6cA6fv+4fF3S5Csheo1JkjCZTsBERezOceMMxCKBVBRgE2QZLYJ+Gz6dRX/jXX3Lv4OAK2srLVNTfWuUN6YVFY1YawZ+3mF3swmmDj8OOsDzmULxzl/Qmo5Z1uVLqipIfDX2QTTxGUjcSYyg3io/p5VofBgtmwSEB++ruK/0LZp5Q/60nQimmeU13wIzLeTCeaIzwIiDgQzYOY57gKpB7Flm4B6t0NFvti6qeGJfGju1va1tXz5/nO/BKIvG5ssdul2VahQznYZWpSFoMI2sGxT8GHXb9RlPrPu/iXNET1VcnxfoAfOZdV/DWO+dVJwJvli63P54Zw/88fbySkLlowvhr2XOViq4qDih4npj/2gZKwlYoi4+1P799y2bdvaTL9bXfx+WdnyYLfJ3m7Y3KIqUO9GlmY2lthCffhINuM/veelVR390Rw5nZe59y7/3plFyXGPmETRn4eZdqh4T8QGGHaKBVAxiWIr4jJQ909P37P420d2o2MwU/ws8+ZVJQ6OKb7dGHvzaMc5f+avrLRoanLTKq45y1BRI5ngPAkzDqTDIc0nek6BknKQNOKzz1CYqdqx+YmdRz1k/P+ZZUumCtsn2SYulTDjQUoA8UmjWcJmVlf11oZVb/SlOcf4iz71+BVsk48bE0x2mY7h0pon2AnUEzEHqbHksp0rdu/eckNLY332KAHohXOwhm3iEgnTowLnUF3VnmPgnD/zx4w/o6K6XMn8hNlMEZd1ILI4qZeGbJKBiH9N1F29c+PKV7sfMv63dP51czmR/CmxnSM+EyIXRjtpJKtjm7CqvlWy8oG2zSteytHazfj/8Pg1JkiuAtSKC08yzpHJGRSNty7b+cv2/V0f3bC6+lC3AORwXnjdXNLkz5jtmaMLZ2mVTPjBthdWvXg8AaDjmTozL/xYmdjkL4gwUb3z8VZ28i9VxyawAmklJ4t2NK94raxsedDc/FA4o6zmTDVmHTPPGB3CeoRmMoFVlbfhs5e3Nj+2Zc6VdyW3rb01U3nTE9cGNvW4+KyKiBKNtObsX9EEqXGBy3b+1vs9Vzbdd1NHZWWdaWqqd9MvWDoHCbuOwdPFh6MR530apt/XtvmJl/oTAOrPgYmYiJ8hohL13kdb8Ci6YikX77YmrL/k9d+t2nv6wuunhOJ+TcbO1dHE+Edo9mQCA5E2StlL3/r1w29ULn/sSltU9BPxjlQ8Rg/j9xaAbLr9vw+H73yweepOf8Z/7zk1dF2/hTFz1IWjGmcn/r27mle+dSwn2BwlDLWLaPK+c8aYVPhLYnu6+nD0aPzeiRBW8Y6D5GTnfPmkyRf8MCT3AxMkL1SXGX0LEtOMiOaJLt258NyrPt8SpFI/BFCk4nT0MT4AkBGXCZNFE86yQu+atWHff72defunbIP5o1LB9MTZBhMJUjl+5lkrD128T9DSgv6Zv6rK4L77ZNKssx81NnXFqGWiXgLghMicISx/w2wuVB/KqBTW3kKrKjoDcMsmTJ5Z5MOMEjNj9BJtXJgRGwQL2v702vuz6Y7/BfX/E3B2HKRKxeG0w794/IeorLTYvl2OZv7YLppeVnOdSSTrJBwSqc5lcT2gApAAUUgNIInCx4ONZhABomTsu1S9Yki0p8oJaM4vTHzcpWHtOrzfJFJjtWjcKSSRyTPwGA0gFCWBYpo1+plIEJE8YHpVFcYG1H5gNw7sem0GIDI0EZ1hxpmI1XtnbLJ83NR3v3TomR+3oKrKoKVFe34xAbU0reL1SQxuIaJTVT0G8YBRgopgiS2O5Gb0yO1U43oUDyjisN5gGEoHuyC9aaZcArUHzdCozkTckNCsIhqkimn2eYtAbFFweYpCFKLM1rBNgHOlIRpzOwGqAnEhvAsFpEoYqLZWvPlSEzIdB4VtwEfV44xanFWILYnIzqR0nvN687zDQL0CUBtrfUZjvWfU/DPbRImE6YFrfYUnZkM2sOIyouJeEK/Pg2gbAX9SKEFpMjHOIqUyEL2HbWDFhYiydgN1rAfB+AoPIsNBYMWHEHEvk6JZgT+C9G2KCmhOBWguKS4E4XwOkjbKYg6cZjaGMp2HsH/nNpTMfg9cmM1X+6uqiLFJwzYJl+ns8GFms0fXCwp9g5TfEUWCGacRYZ4ql9sgeTqxgct2RFndPHdIVYUNEnh7xx+Qbj8AGyRZB8r4Cg8mwzYPnIEygM7jIDFInInVO2eCVGnWyT8C9V/OWTkUe8E6c8HS2aK2BZBELGVUuESrcpBk8eE+KD8MpcdaNz3ycv9/UsszKl6/EOBlCvoEGztGXHZkI0sKzzZhxIeHQfSoJ12x67mG54+nhksXLD0fapcw9HoywSniMhJzbeHaSRVkLGafvwhBorh3VWY/XE9EbJNj4bKdWwG+H6I/WHff327v728uum1NUXEWlyjxciL6WzYGLtuVV+aYiOBdFm++uB4uzAzcNOuFsz7qifLCmcksVaHr2dhJMW/wgHiTSKHaSc6evWPzI7uAWiJU1lo01bvpFdXfZpu6dWBaXxVgImMB778Lx1/dsfmRnd2/rqy0wCIA6+M3FgElLdoz9lq68ONzWfUbxMFHxGclqug73qoMNpOoCpCySbD48D/h/JdaN6/a1ssH2juPetGM9ehZnz6t/OMzmPCvbEyN+DCqRCzQhyEiuDCDyTPnnVD7q6oYm2CFhiryNZvsuuPnt9d0xL+kyrr1RzFzScs+7VmmfPnNjZeC6U5ji8pcut3leixOpPX3vLEFNkigcK3fA2dxjeTlS92VmHniHFXimn9lY6oHijNUHQcpKy779daNDV9GZa0lAJh1/rKJLpDXiM2kyE8qRLJUiQwpKKOQG9o2NKzsZvi8mg16Nz1MX1D9BaLgm0QUAd3fM6pE/sIgGJ/YMLzctmNTw7cHRXNFzd8TmQcA4UhzF7YwqoIgUYTZ518GMhbHsqdVVUyQZFXZ6V36mqb7lvwGiEsjsF5w3BJkpaqqRgaihpgrb7krmZFp99pk0fUu0+EA2BPZ+tnOQwPxS2KcmUXltrYNg8O5tHzZcma+b4A4CxGTiN+bHZOes6+psZ2iL62uNkFqRVQDU5DJEddbs4OGf926cdXaaCepG0BXUC2jqoXQ2OinVVQvMxzcoN4JSPno6I4qFCVgMzeqzC1oG1SAhNgY8a66bdOKVQPvCqplVILRVO+iikb7/WhRtKCtOTItQpSevQDjS2bC99H+qio2SLGK35PJdl7+mwerWy66bU1R2HHAjZ16VkE4F+3vMvsyO6T5oRvDy29+8u4gNf6WTOfBo30AVbAN0L5/F3a0PAO2AQp0cocF5+kVNR8hMo0DwTlnennJLG7bsLKRIs1V/UM2yb8Sl5WCmF/h2QZGfGZp68ZVq1G2PEDzQ+GgbPA8mxJKK6rvMTZ1c1RoB1sQzUHCSJj5Yuumlf8+JDTH31FaUX2DMcmHCvVbcnb1+MkzUXr2AngX9mB+VSKrZHhftqP94l8/XPPGULo8l9305AMmSN3owi7fMxKUM3l2bW3G/l2vF27yxDi7MP2FnZtWfWtIcS5fttzY4MGC/UOFi9e+sXXTymtoWkX1uxj0ByI+VQvRovHD+Wz2kbbmFdcPycP1EoB5/SI9a9abCV8ifyC2s1Rc/iHOWFi9y65t27Tyqtjf8Rhce2QfAah5wpjENYUujKrAJoow+7xFMDboZrSc1ndh1zoCr1JgLFTdYMlVUiZiJZVxYFsP1QBQ6mvzb39pPbJd7Yh8Yy1QKWZ/1rpx5dUxNm5IcS6vftLY5OICcVYiJlG/q4vkzywJFpIxp6o6LcCGiuw4H/5JEP4jUMtorvdDpo760/xxVaGbsvRsgpmp4rUAp1dBYBGfUcKtAAglLTokCwIAzVM9oERm2efEZ68G0djYTqD8tL+By3Qi03kIYyaWQF2Y62FlH6ZhbOIyExRdpqq9MiYDCgrjiMuoIlGHWF+o2CLTfgBhuiPO0ygKw9lllE2E8xkHBM1DiTOILH1WfHhVgTiTqiiRmVoELWciei+YEfXc5q2mPJmAxMuDu5offxuV6znKzg3ztX49AwAJlbEJCIr8BS6y9wjerYnLoHlA/cD9XvWCykWm9dkVbVB9lG2CEGUK8zR9ABFBpuNg1LTd55fiQg27DjmXPuzC9GHnBvHK/X3YddiF2Q5/zNgdMzIdB+G9Kyy8mcNZ5Mm25763dXhwrjStz65oU5WGQnGGQqKmf76IQTq/4GwdkRGfDcFoAECREzOCF9G5OLb+UygcFB6K3tssKasIwPwwhqvDqKRE4zs9IgOoMSIAmc7Dx1aRRAQiO9Sv42V8M12HB7A2Ec7EZvhxJv7usXFWifnA9acgifQCBnBmLhSbr3FKbElFXtq5ceWr3dI4Elf00IBiTrzTUV8GYZuwZAPDNmG7I0NQITKsEu4wxbQBgMaNzkN7xRqu7aozt6i4PxIbApCXT6Gxhg8znVDxStFbJ+UVVUWIhumOCMG8Ijs4grMLdyRPGTfsOO+c3blFxb9KbHpYAapEhjlI2Bwv9ApTkRJUAMUcVtCUqB4qXyElITYgYEMcsx25bGwMpBKmxKEu6uHIAIrD4rNf8S7zIfGZfwMhQ8QEJY1i1PTC9qaGNKqqCvDeCrwqKw3q64WImolt7i6UD/tEUZ8MVJRATJHwnoQXMSmUfJjN16WKstuKKBfA9MK2tfdkhh3nSAginLt90YBU5U3vs591PvNx9eFPiQM6IgBEUaQcp1mojuvxAPmFbyMB2hr9fxGAphExdqKb1zLpGxMibukdUwbc4taNq9bG7/24tLzm92TsCqW4C001yuDunTeMfbHdeLx6xIKm/IpN2cQFXb6w6MowXCoKEQ8mjgdI6XE4QnO8JSBiVWwdKZwpxllJhckYEb8T5C9t27C6Nf5gw/SKmifYJK4RF3oQjKqCiMZZKriUIRYi1nis4PoRXZSysl1mNxD04HshDlh9+FLrplVro1KK6GprWrFqxgXXPk3JBHmvlE4E0QS4/OfRFH7F3x1m9A5LnY+y96LJBAUmkdcOSUTKkhHmiSouSyeN+9EJ0iQnkkUnpCGdyarxxgOAZ+V0wo4czlm93XLnI+y8SJBkmw3bt7+4+h1U1loUPWew9mdZ9Uu/rWyuOVLWrVBoYvQ2qhSmp6A9m6fbz47CawC8KR6noadEgpHIdKQBHAYGHS084Q6VHC8J8mPHhtKhgSpnxeXF/AlheA2cJwcE4UnENABs2mTT7oTMb0jUsXogi4QZd/JwNkxqnQfwzpGP1fWbArUKDamgrvsoHaDAqSNs9kRh3uapfnrFG9keGLCKEzbBu0vLa5a2Na1YBTQBzUBpefVnjOU7xTsFERkK7gZwKyprzbBppfi7fcZ+xgb0VUMGogwSPeFaqnpoksFBIoqta+rk6hQxgDuRCUYAG1hSQAOACIZsjHOl6VmgNiw4p+1tNkFfYTIQcVAO9pQuWFLe1lTfCsABawGtuTWaHes11x9DQNZCcRhMp3R3QOQlcACAuSNs9sT01Yui+iCBut8BiFS9EtH3pldUXyLgFxhyMZGpEZ9VqHoVZ0B6ZiyvMnzyuj5H7RwVr6rwgJgT6z+Kh99FprN6OYkmj4LIKEXzR8GE49T19Oi4UjgVZwA6I8J5kaBpmICOEpQA40wVr1B49SGTsVMg9lel5TV3AbqfmBcTmQ+Kz2ocElUiIlE9aIloNxGfEmXM8+F95bj7amEU42/yI7YmRxImu4kYesQLo3hxDJvkjRxvtuKzOTFnFU+quGD6RVVFrfX1XcO2JTc1eVRVGXoD5aqeohByHlmiuAPLBEkQG6h3Iz8XrOfmbphMkMwDIurLG6TQ4ce5sdGjstJSh1YodePM0SAAezpb8+3crFv12R7VC5G3C9VdrMBrUTA33wxvdAMQnztzwZJ3R+/Vjkzz9d69FAe0tsWtb3pUkMJlnYRZJy7retPshU0wTSV5MXKDVYdeOA0AzHgzdQExz1XxUkisEKoIksVg5qO4RaPxxn4kXgL1IPJBstirFpKp6sa5dARwphmdM+cTmzm9y1yIVJ3keEBd6HtpESWNP7rVArIZoL8qTDOo5yBpvZNPAPgCKtcbNA1LeQMdI7xFSrKlx3bb+/P9ujcUDXoVugHA08MonKqKv2cbkEYl4lyAwkWyePyxnbNE0aCY6EijmeaxvAoTJFA8cQr2t71a6J0inN0I4AzcwCYgPaqyNxefPZ4BQ800vaL6L4nMWi2sLl7jseoHjeq7t2+cvTd6e4hPUDnq+6L3ppcvfQ/YvARVFERzVLHlIe7C1k2rXh7wvP/+6dVZC5fN8opXoCjK5W3zlXMVj5nvuQTFEyZD4sK27q1a8SxApAQpzIogkEKVtIM03x4LAdlAO97ZV9Ta8syfU2G9i904k8oFOzaueGW4cBbFK1owzrF9JrjUctpvkCTtJeaSAgSAIOrZBhOdy9wB1H8sKjUdKu3fzfh9VFW9AqApWvzHPZLeSsacVUBJM0EhZEygKvcAuCzWIENjk5btMmhG6ETuMiZZXHhJs0eQLEaieDxEjuzUCvVBotiE6Y4n199/7V0jbf6XVlRvIzZnFoozGxOI9/cAuHyYcL7bmGSxFoSzCrFl8e6tEEWb42aWmv9kk/hovGCFNYbYhPEufWPbplUPDUFNP6FsuUXzQ+H0iuqvEAcfgzinvYZrKUUz5TEDzOPyj1L1NNlSRsJMXeumFfVDUmt+pMb8MyZI3ilh4c0szmUxsWQWpp29oE8nlyrIKLFVCTuvWH//kqYrb7krufbuT2dRV0eoqzsx3XV1VIs6tLQ00rx5VboedVzSck6v3t6qqjUG82D2YrKUtOzTV/CKaVlTF05fuOw+Nskb4y4/WxjOSSNhprZ108p/GVKcy5beZoLUHQNrZkkaH6Yb2jat/ETE/OVLr+Ug9Xihi4ZcqxoxRMJr2jat+v6gWtXiNsbSiqWfNiZ1V/+VqnEV68BGaCgATyawCMNP7mhe8eCR5pmBtNdFPabTK5YuIQ5WRaeQDLCN8c8WYvyp0/t0ckUHSLC1DOBPLpt5/68e+NjmsuUPBs0PLnegwtpFK2trbVN9lOO47OY13yYOxpEPH/7lvYt/11MQXsErpqWxLixdUH0ZU+KX8SS8Av0O8mSsEQk/2bZhkDjHvBHhnFil4n3hbYwqZBOs3l3VurFhLQHRoWHFytuIzKk6kAb26IQcVfG3tG5aeV+EcrcQ6HEzJLloQGwTllbU1BsTfFW887k+8/5YBoM54ibuL1XxX23d2PC1bppLSvQER9sQamsJ6480Vs9YUHMbyNyhIgIIFdzALoIgNQazz1+UC0UfywnNTW44IKGvXn//4v8XMfM6uwjrpb6ABvbKT/3HWGNOe8gmiq9T9RCXhao+p6DVAjzVdM/ftHYLy7La1GuvvPEiGTNXxWmBEzNinK1RCb/SunHFvw4Nzj4606sgnHPDq9wbEzrS725paQy7R5eUVtR8w9jkFwc+uoTAJkEi/kny/n8fezxFnyRFz9ElCz5xPql+k639iwHsQAMUAFU2SVZxa5XxxdZnv7elEJqnlf/d2cT+6yY3bqXgBcmNLsmiZNY5mDxr3glHl7CxTMRQlTt9kPm3pjuWvN1TY++dN5l6x8cWSe40RwBYdNN//iUz3W6C5Dku3e4USgRik0gRcQCX7TpIjJ8wmZVb33mhaXtDffq0C679ZLJo/P0+2zWQocURzjbJ4t3PwPjHgeBsWL5ObAeMc/fokjDzhdZNK74Vjy6JvOfSBUtKSe0fABTFpcIDGFoFyQ0mItAKYVrZlprZ3F8pwfSLqopUixeS0CdAeh2zDXKVdyOY0In6TcVlCHhMhRvMGHlue1ND+phmZ9nyYBdlK5hRTdAa4qB4UIO24ikJs8+7DDaROuHQKsR9jDY5lny2axeIHvbk1jTdfW2/w8Eqb31qovF+EUA3sOGrFYAP072GVml8JiizNSZRBBUHceHvyZjH0of2/PiNF3/9lAmSpxfUM90vzvSYqnwv9a4Jz21be0/muDiT1hChepA4CxGTquwzWTp7+4sNB4+YN7khteVLv85B0T8NdlwhODruUr2DirwK6AsgbFPFPiUwK0oUOIuI5xPz6UQmysZGMxxHfvJvfF82idz80NcBbIZiqzL2wguI6VQozQVhPhHPJWMx2BGLuYFVJbPec0Ktfwzz1bNJGBukEGY6RIEtgL5IwBsqcoDIJBR+GpH5MxDNNzZ5GhHgMp2qUYqf+5WuuMHDBElmk4C4TMfbO37ftW97y6nGWlVVGlacieZChw7nnNb3Lntr28aGu3uMK8wlk2rpjLJd4zKceYWJp8UN7UMwqNZEOyUd43hY9VBx0Zm9gzumEkM0qFZAysSWjk+z1x6COkCaCSJOk0VjadZ5/dv6J9wFAA8ia2wSZOxRwqPi4V2IqN0PBQ2qzZ3USGwsiPDmi09ruv0dYRuYQQ6qHTmcFTmne8tpUlTW/MGpHvWRH9pjRHkJH/jFyq4J0899nTlxrYoUlJ08OrMS/62KqIhXcdL7JRr1vHdn4wZTyKLElqMBVkSDozk68ltF5Bg0y1DSDAWdNudCTY2dSCq+cNKp+xh7Fe9UXejFZURctvvlJVSIEBExFagciKIuHFVRZkayeBx1vLOXY9PnfwLOCiIhIlLgw3/c9MhbKClhtLQI0DN+3tKiqKy0h575ccvY086ZboJUuUZpxkGaIfFZ8kR9XoM4RLmvF0+GRWUzk5kaz46n0U0zRLznSVNP75o8c17gsl1KzIOb90/HpplAPIjB/91frgpNFI+TzkNv/zyb7pxLKKj39WTxhmObCtSna9s2rnysb6a5tyaIKxLtGL5FfHYTm0QwFAOShs9WV8c2xaL+R7aY3isi/8U2xaOf5iQDun7i9LMudmHmTyZIkZ7Q0z2pRIdB0Tj2Yeabr/78W1cS6Bdsk/8DcE4F4rp+1Lpx9ddQWWn7NtPzUdtE4zzd3tSQVriPiLgdZAJb0FyUkWUiKy77fBFJ9famhozJuOu8y25hm7CjcmFUHUWz6V8zqUlLfvtgzYsum/0oCBlmM0oFQMOgaEKQ7TzUuP6+675cVbXGcDpc7H325dGMc8wbzZmOcUuAWo5L7/V4zA8gOme1bcPq1lAzV6nKXjKBGV0PqSHbpBVxr2Q5c/W2DasPobLWvLXlsQMgd7V4t3XULYyqY5OwEGnTbOaqHc/cu3NeVW3i1w8t/ZVk0ovJWGFjeHQJgIZBanwQptvX7t3XsrS2tpYb975Cb2157IBK+moR/9qoxNkmrYp7Ocz4q/e13Nd+JN/Q+zq2AxQf6Lxn4xOvkKYvV5XtbJMW0HB0MH4qEAmfZx++f+9zT+wBqqK2xFhoRdNXqLgtHKRGEc1Jq+q3efWXt73w+FZUVZmWxvpsZe06u+6Bj/3IufSHiUyXGQ3mhKpC4YKiCUGY7fi/Sdr54ZbG+rAeQA7nnZue3OG9v1zFv8xBajQIgAIacpCyKuFG25l+356XVu09dnVwd4jzOFfsIEwrv2YGm6I1zMFFUYHTSThiXlVAhChTGP6oE2H1/g2rDwFVBuhRLpvLWcyrOoXGjllNJnGluLRESeiTQDMADlKsPvwV+fDat5pX7+rreOVOYf/z5asvtqnUk8YmZ7h0uwNgBuusDoBkHyW6iuGyHfeu+4/FtwDQ7tPX++J8UdUpJMWPkUn+5cnDGR4EZpsk77NPZds7a/a1NLYfj/FPzPw9HnLWrMqUn3L6nczmk6oC9c7FwWka7uWIYrWBjdqZ5F/aNjbURb/r7+GOlERPr1j2f4j5SwBBfRgfbjbsDKXRPFNrCQzR8O4pPvX55uaHwv5q23MFZ++96bFpSU48HCSKrnLR9LYRwTlKbIkGybFGfHjY+exnm+699mHU1jLq6vTYBXQnG+devOFVfV13/dAJGB/5A3rki6ZX1HwExP/OJjgzOihMhulBVeKhopZMAPHueai/rXXjil/lSjJw/KxQd01w6YKllzPsnWSC89SHMUOBh373ytHMlkwC4sNXRf3ndm5c+ZN8FqSqao3JlRlfcXPjp5W5ztjUJJdpB1SHBedcWYMJUoZNAO8y/5XNdH72Nw9Wt8T0yPFxVso1YU4rr36fYXsHGXvuyOAc8Yb67EYv/jM7N616Jk/eKIT548/GDeRnlFVNCM2YzylwM5tgUvSg8RlB+TZs9/tQJIAyGcvEFurCVpDevsMn78VxNOeJd65lKT8FtwB0G5tgqoqDepc783UQC6SCuEOK2BgyFurDtxV6T6a98459LY3tMQ2Sz4L01LSVNz4+2yYS/6zQGhMUBT7bCRHno/D4gGPhqtGRmALARAVtFuIyLVD/b7+8Z/FqAKhas8Y0Ll5cOM6Vy1K+iz8N6GeGAedevCE+fAuq32otfvN+NDW5qJI4/1EphYPXg/mmlX98hmFartAaZjsTBKj3ca09csLQswKPenveqjnGAcEQm2jWowrE+98D+l2Yzkdbn23c3/feA6X5tPlVk4Nk8fUQ/B0ZOxfEUHG584ALp5kMyJh4WoR7E4TvUZj+zo7NT+wcDM09d4H33bTmXDV8kyoW26BokqpEMz2906itESAliunuTbNqNOWCoh+ImY1JgG0C3mUg4jeA6AE5+NLjTQ31aagS6uro+Gd85YezSYz5e1b9xJDgHPNGbHK3EPHDnJFHt7/Y8E630iiQ5oGnqHvMXZ88r2psYtyYvyDVj0BxKQizuoeHRrtqPM/xyF0Jsc+ca9eLmiW2QbEOoKdaJfF0d1dYIZozT5rnXHlLsuvA4StY8FFAKxWYQyYfmo/4+tEhyfomwL8C6VNh2v98z0urOoaM5tparmo5h3JCUPmpNacZyx+A4kOqchGzKSETnZWl4qE96UZELzFHLgMzoArvsllA/wAyPwfkB+vuqXrmWAI3VDjPqlyWcl24ghUfVaASwJkF4+xDBdFWKNYRmR/s8HbdUPDGIO3H3qflAcC73vt344pCXADyC1V0PojmEHQqgPGqmozuSl0EHASwE4pXQfS8Mm+wKXmxVylxtI0NzbFBPZ+5zySxqWXLi4my8w3LQlWaD8VckE5T6AQoUjHNaQIdAnSXKrYR0WYi2pAuKt68r6k7lhzTvH4AB/IdTwZqueWcc6inGfL+z32/xDsqg5cFUDlPCWdAdQqAMaqaJEBA6FLwAQJawfx7AjWDZMOlk/725Z41/pGzXTekNPeHc0DZ+cq6QFUvhNKco3FGmkAHobQThK2q2AzGs7YILww1b/x/c2E5eSMlzlUAAAAASUVORK5CYII=">
+  <h1>Network Topology <span class="dim">/ Config-Derived Map</span></h1>
+  <span class="ver">v3.3.0</span>
+  <button class="btn primary" id="uploadBtn">⇪ Upload data</button>
+  <button class="btn" id="newSiteBtn" title="Stamp out a standard site from the template (cloud → router → SD-WAN → switch → APs/endpoints)">＋ New site</button>
+  <button class="btn" id="sampleBtn">Load sample</button>
+  <button class="btn" id="clearBtn">Clear</button>
+  <button class="btn" id="inferBtn" data-tip="Show or hide links the tool inferred from config evidence (dotted). Solid links come from declared uplinks or unique gateway/CDP matches; dotted ones are best-guess and toggle off here.">Inferred links: ON</button>
+  <button class="btn" id="advBtn" data-tip="Advanced view. Shows the physical port at each end of every link — the interface name (and its description/speed) where one device plugs into the next, like a cabling diagram. Off by default to keep the map clean.">Advanced: OFF</button>
+  <label class="sel-wrap" data-tip="Vertical spacing between tiers. Tight is most compact; Airy and Spacious add breathing room for presentations; Adaptive stays compact but expands only rows whose links carry port labels.">
+    <span class="sel-lbl">Spacing</span>
+    <select id="spacingSel" class="sel">
+      <option value="tight">Tight</option>
+      <option value="comfortable" selected>Comfortable</option>
+      <option value="airy">Airy</option>
+      <option value="spacious">Spacious</option>
+      <option value="adaptive">Adaptive</option>
+    </select>
+  </label>
+  <button class="btn" id="wanBtn" data-tip="WAN-side overview. Opens a table of every device's internet-facing side — circuit names, WAN IPs, gateways, NAT and any SLA the config exposed — so you can see how the site reaches the internet without clicking each node.">☁ WAN side</button>
+  <button class="btn" id="pdfBtn" data-tip="Download the diagram as a vector PDF. The topology is embedded as SVG, so it stays crisp at any zoom or print size — no pixelation.">⤓ PDF (vector)</button>
+  <button class="btn" id="exportBtn" data-tip="Download the current topology as JSON — including auto-established links, the derived INTERNET node, and any manual type/uplink overrides. Re-load this file later to restore the diagram exactly, no re-parsing.">⤓ Export JSON</button>
+  <button class="btn" id="themeBtn" data-tip="Toggle dark / light theme">☀</button>
+  <input type="file" id="fileInput" accept=".json,.txt,.cfg,.conf,.config,.log,.ios,.run,application/json,text/plain" multiple hidden>
+  <div class="search-wrap" data-tip="Filter the diagram by hostname, IP address, or MAC. Matching devices highlight and the rest dim — useful for answering 'which device owns this IP?'. Matches parsed values (mgmt/interface IPs, gateways), not endpoint IPs that aren't in the configs.">
+    <input id="search" type="text" placeholder="hostname / IP / MAC…" autocomplete="off">
+  </div>
+  <span id="searchCount"></span>
+</header>
+
+<div id="statusBar">
+  <span id="statusSummary"></span>
+  <span id="statusToggle" data-tip="Show or hide the load details (devices loaded, links established, and any notices).">Show details</span>
+</div>
+<div id="status"></div>
+
+<main>
+  <div id="canvasWrap">
+    <svg id="topo" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="emptyState">
+      <div class="big">⇪</div>
+      <h2>No devices loaded</h2>
+      <p>The map renders <strong>only</strong> what you upload — no assumed
+         devices, no invented links. Upload <code>.json</code> files in the
+         normalized schema <em>or</em> raw text configs
+         (<code>.txt</code> <code>.cfg</code> <code>.conf</code> — running-config
+         style). Drag &amp; drop works too, or press <em>Load sample</em>.</p>
+      <p>For text configs, only what's literally in the file is extracted.
+         Links come <strong>only</strong> from directive comments you add, e.g.<br>
+         <code>! topo-id: sw1</code> &nbsp; <code>! topo-type: switch</code> &nbsp;
+         <code>! topo-uplink: rtr1</code><br>
+         Without a directive, device type is flagged as heuristic and no link
+         is drawn. A missing uplink shows dashed with
+         <span style="color:var(--warn)">⚠</span> — never guessed.</p>
+    </div>
+    <div id="legend"></div>
+    <div id="wanPanel"></div>
+  </div>
+  <aside id="panel" aria-label="Device details"></aside>
+</main>
+
+<footer id="credits"><span class="credit"><span class="lbl">Created by</span>&nbsp;<a href="https://www.linkedin.com/in/ronmangune/" target="_blank" rel="noopener"><svg class="li-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.59 0 4.26 2.37 4.26 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.55V9h3.57v11.45z"/></svg>Ron&nbsp;Mangune</a></span><span class="dot">·</span><span class="credit"><span class="lbl">Contributor</span>&nbsp;<a href="https://www.linkedin.com/in/joey-c-a68a846a/" target="_blank" rel="noopener"><svg class="li-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.59 0 4.26 2.37 4.26 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.55V9h3.57v11.45z"/></svg>Joey&nbsp;Cassillas</a></span></footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   NORMALIZED DEVICE SCHEMA (the parser contract)
+   Upload JSON as either  [ {device}, ... ]  or  { "devices":[...] }
+   Required per device: id, hostname, type
+   type ∈ internet | router | sdwan | switch | ap | unknown
+
+   IDENTITY   : model, vendor, serial, firmware, uptime, mgmtIp, mac
+   WAN (edge) : wan{ ip, gateway, circuit, nat, overlay, sla, notes }
+   LAN        : lan{ ip, vlan, dhcp, ssid, radio }
+   ROUTER std : routing{ routerId, protocols, defaultRoute, asn, ha }
+   SWITCH std : switching{ vlans, stpMode, stpRoot, stpPriority,
+                           vtpDomain, vtpMode, poe, etherchannel, stack }
+   NEIGHBORS  : neighbors[{ localIf, remoteHost, remoteIf, via }] (CDP/LLDP)
+   INTERFACES : interfaces[{ name, role, ip, vlan, speed, duplex, state }]
+
+   TEXT CONFIGS (.txt/.cfg/.conf, one device per file) are parsed
+   client-side. Extraction is strictly literal — only values present
+   in the file. Optional directive comments (any of ! or # prefix):
+     ! topo-id: sw1        → device id (default: hostname/filename)
+     ! topo-type: switch   → authoritative type (else heuristic+flag)
+     ! topo-uplink: rtr1   → parent link (NEVER inferred otherwise)
+
+   RULES: the map renders ONLY uploaded devices; links are declared,
+   inferred from file evidence (dotted), or manual — never invented.
+   ═══════════════════════════════════════════════════════════════ */
+
+const TYPE = {
+  internet:{label:"WAN / ISP",   glyph:"☁", cssVar:"--c-internet", tier:0},
+  router:  {label:"Router",      glyph:"⇄", cssVar:"--c-router",   tier:1},
+  sdwan:   {label:"SD-WAN",      glyph:"⬡", cssVar:"--c-sdwan",    tier:2},
+  switch:  {label:"Switch",      glyph:"▤", cssVar:"--c-switch",   tier:3},
+  ap:      {label:"Access Point",glyph:"◉", cssVar:"--c-ap",       tier:4},
+  endpoint:{label:"Endpoint",    glyph:"▣", cssVar:"--c-endpoint", tier:5},
+  unknown: {label:"Unclassified",glyph:"?", cssVar:"--c-unknown",  tier:6}
+};
+const TIER_NAMES = ["WAN / CLOUD","ROUTING","SD-WAN OVERLAY","SWITCHING","WIRELESS","ENDPOINTS","UNCLASSIFIED"];
+const NODE_W = 172, TOP = 54;
+let NODE_H = 66;   // 66 in Advanced (fits the VLAN line); 52 in the default view
+/* Vertical spacing between tiers — chosen via the toolbar dropdown.
+   'adaptive' returns a base and adds room per-row where links carry labels. */
+const SPACING = {
+  tight:      { base: 168, label: "Tight" },
+  comfortable:{ base: 200, label: "Comfortable" },
+  airy:       { base: 235, label: "Airy" },
+  spacious:   { base: 270, label: "Spacious" },
+  adaptive:   { base: 178, adaptive: true, label: "Adaptive" },
+};
+let spacingMode = "comfortable";
+let TIER_H = SPACING[spacingMode].base;
+
+/* VLAN → color for the Advanced port map (borders of port chips). */
+const VLAN_COLOR = {
+  "10":"var(--c-endpoint)", "20":"var(--c-router)", "30":"var(--c-unknown)",
+  "40":"var(--c-sdwan)",    "50":"var(--c-ap)"
+};
+function portVlanColor(p){
+  const v = String(p.vlan||"").replace(/[^\d]/g,"");
+  if(/trunk/i.test(p.vlan||"") || /cross-?connect/i.test(p.role||"")) return "var(--link-inf)";
+  return VLAN_COLOR[v] || "var(--muted)";
+}
+/* Build consolidated port chips: runs of adjacent ports with the same
+   description+vlan collapse into one chip ("gi1-9  POS ×9"). Trunks stay
+   individual and get a direction arrow. Empty ports collapse to one chip. */
+function buildPortChips(d){
+  const ifs = (d.interfaces||[]).filter(i=>/^(gi|fa|te|eth|e\d|ge|xe)/i.test(i.name||""));
+  if(!ifs.length) return null;
+  const num = n => { const m=String(n).match(/(\d+)$/); return m?+m[1]:0; };
+  ifs.sort((a,b)=>num(a.name)-num(b.name));
+  const chips = [], empties = [];
+  let run = null;
+  const flush = ()=>{ if(run){ chips.push(run); run=null; } };
+  const short = r => String(r||"").replace(/^"|"$/g,"").toUpperCase();
+  const isTrunk = i => /trunk/i.test(i.vlan||"") || /cross-?connect|sdwan|uplink|-ap\b/i.test(i.role||"");
+  ifs.forEach(i=>{
+    const used = (i.role && i.role!=="") || (i.vlan && i.vlan!=="" && i.vlan!=="—");
+    if(!used){ flush(); empties.push(i.name); return; }
+    if(isTrunk(i)){                       // trunks never group
+      flush();
+      let dir = "";
+      if(/sdwan|uplink/i.test(i.role||"")) dir = "↑";
+      else if(/cross-?connect/i.test(i.role||"")) dir = "↔";
+      else if(/-ap\b|ap$/i.test(short(i.role))) dir = "↓";
+      chips.push({ports:[i.name], label:short(i.role)||"TRUNK", vlan:i.vlan,
+        color:portVlanColor(i), n:1, trunk:true, dir});
+      return;
+    }
+    const key = short(i.role)+"|"+(i.vlan||"");
+    if(run && run.key===key){ run.ports.push(i.name); run.n++; }
+    else { flush(); run={key, ports:[i.name], label:short(i.role)||("vlan "+(i.vlan||"").replace(/\D/g,"")),
+                          vlan:i.vlan, color:portVlanColor(i), n:1}; }
+  });
+  flush();
+  return {chips, empties};
+}
+function portRange(ports){
+  if(ports.length===1) return ports[0];
+  return ports[0] + "-" + (String(ports[ports.length-1]).match(/\d+$/)||[""])[0];
+}
+let stripHeight = ()=>0;   // (re)bound each render when Advanced strips are computed
+const NS = "http://www.w3.org/2000/svg";
+
+/* ── State ───────────────────────────────── */
+let devices = [];      // ONLY populated by upload or explicit sample load
+let byId = {};
+let nodeEls = {};
+let selected = null;
+
+/* ── Helpers ─────────────────────────────── */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function el(n,attrs,parent){
+  const e=document.createElementNS(NS,n);
+  for(const k in attrs) e.setAttribute(k,attrs[k]);
+  parent.appendChild(e); return e;
+}
+let statusDetailsOpen = false;   // details collapsed by default
+function setStatus(msg,isErr){
+  const bar=$("statusBar"), sum=$("statusSummary"), det=$("status"), tog=$("statusToggle");
+  if(!msg){ bar.className=""; det.className=""; det.textContent=""; sum.textContent=""; return; }
+  const lines = String(msg).split("\n");
+  const summary = lines[0];
+  const rest = lines.slice(1).join("\n").trim();
+  sum.textContent = summary;
+  det.textContent = rest || summary;
+  const hasMore = rest.length > 0;
+  tog.style.display = hasMore ? "" : "none";
+  bar.className = "show" + (isErr ? " err" : "");
+  det.className = (statusDetailsOpen && hasMore) ? ("show" + (isErr ? " err" : "")) : "";
+  tog.textContent = statusDetailsOpen ? "Hide details" : "Show details";
+}
+
+/* ── Validation (strict: reject, don't repair) ─ */
+function validateAndMerge(raw, fileName, errors, incoming){
+  let list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.devices) ? raw.devices : null);
+  if(!list){ errors.push(`${fileName}: expected a JSON array or {"devices":[...]}`); return; }
+  list.forEach((d,i)=>{
+    const where = `${fileName} [item ${i}]`;
+    if(!d || typeof d!=="object"){ errors.push(`${where}: not an object — skipped`); return; }
+    if(!d.id || !d.hostname || !d.type){ errors.push(`${where}: missing id/hostname/type — skipped`); return; }
+    if(!TYPE[d.type]){ errors.push(`${where}: unknown type "${esc(d.type)}" — skipped`); return; }
+    if(incoming.has(d.id)) errors.push(`${where}: duplicate id "${esc(d.id)}" — later entry replaced earlier`);
+    incoming.set(d.id, d);
+  });
+}
+
+/* ── Link inference (evidence from uploaded files ONLY) ──
+   Two rules, both traceable to literal file content:
+   1) GATEWAY MATCH — a device's default gateway IP equals an IP
+      that belongs to exactly one other uploaded device.
+   2) DESCRIPTION MATCH — an interface description literally names
+      another uploaded device's hostname (≥4 chars).
+   Inferred links are drawn DOTTED, carry their evidence string,
+   never override a declared/manual uplink, and can be toggled off. */
+let inferredLinks = [];   // {x, y, evidence}
+let showInferred = true;
+let linkFixNotes = [];    // rule-3 auto-correction warnings from the last render
+let suppressDerived = false; // user removed the derived INTERNET node
+let advancedMode = false;    // Advanced view: physical port labels at each link end
+let evidencePromotions = []; // solid links auto-established from config evidence
+
+const ipOf = s => s ? String(s).split("/")[0].trim() : null;
+const isIp = s => /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(s||"");
+
+function computeInferredLinks(){
+  inferredLinks = [];
+  if(devices.length < 2) return;
+  /* index every IP that appears in the uploaded data → owner device */
+  const ipIdx = {};
+  devices.forEach(d=>{
+    const add=(ip,where)=>{ ip=ipOf(ip); if(!isIp(ip)) return;
+      (ipIdx[ip]=ipIdx[ip]||[]).push({id:d.id,where}); };
+    add(d.mgmtIp,"mgmt IP");
+    if(d.lan) add(d.lan.ip,"LAN IP");
+    if(d.wan) add(d.wan.ip,"WAN IP");
+    (d.interfaces||[]).forEach(i=>add(i.ip,i.name));
+  });
+  const seen = new Set();
+  const declared = new Set(devices.filter(d=>d.uplink).map(d=>[d.id,d.uplink].sort().join("|")));
+  const addLink=(x,y,evidence,lateral)=>{
+    if(x===y || !byId[x] || !byId[y]) return;
+    const key=[x,y].sort().join("|");
+    if(seen.has(key) || declared.has(key)) return;   // declared/manual wins; no duplicates
+    seen.add(key);
+    inferredLinks.push({x,y,evidence,lateral:!!lateral});
+  };
+  devices.forEach(d=>{
+    /* rule 0: CDP/LLDP neighbor — strongest evidence (physical adjacency) */
+    (d.neighbors||[]).forEach(n=>{
+      const rh = String(n.remoteHost||"").toLowerCase().split(".")[0];
+      if(!rh) return;
+      const owners = devices.filter(o=>o.id!==d.id && o.hostname &&
+        String(o.hostname).toLowerCase().split(".")[0] === rh);
+      if(owners.length === 1){
+        addLink(d.id, owners[0].id,
+          `${d.hostname} ${n.localIf} ↔ ${owners[0].hostname} ${n.remoteIf} (${n.via} neighbor)`);
+      }
+    });
+    /* rule 1: gateway match (must resolve to exactly one other device).
+       Skip when this device reaches that gateway through a cross-connect peer
+       (L3 only, no physical port toward the owner) — otherwise we'd redraw the
+       phantom SW→SD-WAN line we deliberately removed. */
+    const gw = d.wan && ipOf(d.wan.gateway);
+    if(gw && ipIdx[gw] && !d.peerOf){
+      const owners = [...new Set(ipIdx[gw].filter(o=>o.id!==d.id).map(o=>o.id))];
+      if(owners.length === 1){
+        const owner = byId[owners[0]];
+        const pn = String(owner.hostname||"").toLowerCase().split(".")[0];
+        const hasPort = (d.neighbors||[]).some(n=>String(n.remoteHost||"").toLowerCase().split(".")[0]===pn)
+          || (d.interfaces||[]).some(i=>/sdwan|sd-wan|uplink|wan-lan/i.test(i.role||""))
+          || (pn.length>=4 && (d.interfaces||[]).some(i=>String(i.role||"").toLowerCase().includes(pn)));
+        if(hasPort){
+          const hit = ipIdx[gw].find(o=>o.id===owners[0]);
+          addLink(d.id, owners[0],
+            `${d.hostname}: default gateway ${gw} is ${owner.hostname} (${hit.where})`);
+        }
+      }
+    }
+    /* rule 2: interface description names another uploaded device */
+    (d.interfaces||[]).forEach(i=>{
+      const txt = String(i.role||"");
+      if(!txt) return;
+      devices.forEach(o=>{
+        if(o.id===d.id || !o.hostname || String(o.hostname).length<4) return;
+        if(txt.toLowerCase().includes(String(o.hostname).toLowerCase())){
+          addLink(d.id, o.id,
+            `${d.hostname} ${i.name}: description "${txt}" names ${o.hostname}`);
+        }
+      });
+    });
+  });
+
+  /* rule 3: switch↔switch CROSSCONNECT — two switches whose trunk ports each
+     carry a "SWITCHn-CROSSCONNECT" / "CROSSCONNECT" description are laterally
+     linked (same tier). Pair them 1:1 when exactly two switches match. */
+  const xcSwitches = devices.filter(d => d.type==="switch" &&
+    (d.interfaces||[]).some(i=>/cross-?connect|crossconnect/i.test(i.role||"")));
+  if(xcSwitches.length === 2){
+    const [a,b] = xcSwitches;
+    const ap = (a.interfaces||[]).find(i=>/cross-?connect/i.test(i.role||""));
+    const bp = (b.interfaces||[]).find(i=>/cross-?connect/i.test(i.role||""));
+    addLink(a.id, b.id,
+      `${a.hostname} ${ap?ap.name:"?"} ↔ ${b.hostname} ${bp?bp.name:"?"} — cross-connect (both trunk descriptions)`, true);
+  }
+}
+
+
+function render(){
+  const svg = $("topo");
+  svg.innerHTML = "";
+  NODE_H = advancedMode ? 66 : 52;   // taller box in Advanced to fit the VLAN line
+  nodeEls = {}; selected = null;
+  $("panel").classList.remove("open");
+  byId = Object.fromEntries(devices.map(d=>[d.id,d]));
+
+  $("emptyState").style.display = devices.length ? "none" : "flex";
+  $("legend").classList.toggle("show", devices.length>0);
+  if(!devices.length){ svg.setAttribute("width",0); svg.setAttribute("height",0); return; }
+
+  /* ═══ LAYOUT — v1.3 HIERARCHY RULES (approved) ═══
+     1. INTERNET auto-derived when a config proves a WAN (default route to
+        a gateway no uploaded device owns + optional WAN interface).
+        Dashed, tagged DERIVED, removable — traceable to source lines.
+     2. GATEWAY CHAIN BEATS TYPE: the device that owns another device's
+        gateway IP is always drawn above it. Pure config evidence —
+        immune to type misclassification.
+     3. Declared/manual links: drawn top-down; backwards direction
+        auto-corrected + flagged — but gateway evidence outranks the
+        type test, so swapped type labels can't trigger a wrong flip.
+     4. TYPE decides the row only when no evidence exists (and colors
+        and badges always). Empty rows are collapsed.                  */
+
+  /* index: which uploaded device owns each IP (for gateway evidence) */
+  function buildIpOwner(){
+    const idx = {};
+    devices.forEach(d=>{
+      const add=(ip,where)=>{ ip=ipOf(ip); if(!isIp(ip)) return;
+        (idx[ip]=idx[ip]||[]).push({id:d.id,where}); };
+      add(d.mgmtIp,"mgmt IP");
+      if(d.lan) add(d.lan.ip,"LAN IP");
+      if(d.wan) add(d.wan.ip,"WAN IP");
+      if(Array.isArray(d.lanGateways)) d.lanGateways.forEach(g=>add(g.ip, g.name||"LAN gw"));
+      (d.interfaces||[]).forEach(i=>add(i.ip,i.name));
+    });
+    return idx;
+  }
+  let ipOwner = buildIpOwner();
+
+  /* gwParent[id] = {pid, gw, where}: the unique uploaded device that owns id's gateway */
+  function buildGwParent(){
+    const gp = {};
+    devices.forEach(d=>{
+      const gw = d.wan && ipOf(d.wan.gateway);
+      if(!gw || !ipOwner[gw]) return;
+      const owners = [...new Set(ipOwner[gw].filter(o=>o.id!==d.id).map(o=>o.id))];
+      if(owners.length===1){
+        const hit = ipOwner[gw].find(o=>o.id===owners[0]);
+        gp[d.id] = { pid: owners[0], gw, where: hit.where };
+      }
+    });
+    return gp;
+  }
+  let gwParent = buildGwParent();
+
+  /* rule 1.5 — PROMOTE unambiguous evidence to solid uplinks, so uploaded
+     configs self-assemble into the same connected pattern as the sample:
+     internet → router → switch → ... with solid declared-style links.
+     Only fires when the evidence is unique; ambiguity stays dotted. */
+  evidencePromotions = [];
+  /* helper: does d have a physical port that faces `parent`?
+     (a WAN/uplink/SDWAN-described interface, a trunk toward it, or a CDP/LLDP
+     neighbor naming it). Gateway ownership alone is L3, not a cable. */
+  function hasPhysicalPortToward(d, parent){
+    const ifs = d.interfaces || [];
+    const pn = String(parent.hostname||"").toLowerCase().split(".")[0];
+    if((d.neighbors||[]).some(n => String(n.remoteHost||"").toLowerCase().split(".")[0] === pn)) return true;
+    if(ifs.some(i => /sdwan|sd-wan|uplink|wan-lan/i.test(i.role||""))) return true;
+    if(pn.length>=4 && ifs.some(i => String(i.role||"").toLowerCase().includes(pn))) return true;
+    return false;
+  }
+  devices.forEach(d=>{
+    if(d.uplink || d.derived) return;
+    const gp = gwParent[d.id];
+    if(gp){
+      /* gateway chain establishes a PHYSICAL link only if d has a port toward
+         that parent. Otherwise the gateway is reached via a peer (e.g. a
+         switch cross-connect) — recorded as L3, not drawn as a cable here. */
+      if(hasPhysicalPortToward(d, byId[gp.pid])){
+        d.uplink = gp.pid; d.uplinkBasis = "evidence: gateway";
+        evidencePromotions.push(`${d.hostname} ▲ ${byId[gp.pid].hostname} — gateway ${gp.gw} is ${byId[gp.pid].hostname} (${gp.where}) + physical uplink port`);
+        return;
+      }
+      d.l3Gateway = { ip: gp.gw, via: byId[gp.pid].hostname };   // note it; link comes from a peer
+    }
+    /* CDP/LLDP: exactly one uploaded neighbor, and it sits at/above this
+       device in the canonical order → that neighbor is the parent */
+    const nbs = (d.neighbors||[]).map(n=>{
+      const rh = String(n.remoteHost||"").toLowerCase().split(".")[0];
+      const o = devices.find(x=>x.id!==d.id && x.hostname &&
+        String(x.hostname).toLowerCase().split(".")[0]===rh);
+      return o ? {o,n} : null;
+    }).filter(Boolean);
+    const uniq = [...new Set(nbs.map(x=>x.o.id))];
+    if(uniq.length === 1){
+      const {o,n} = nbs[0];
+      if(TYPE[o.type].tier <= TYPE[d.type].tier){
+        d.uplink = o.id; d.uplinkBasis = "evidence: " + n.via;
+        evidencePromotions.push(`${d.hostname} ▲ ${o.hostname} — ${n.via} neighbor (${n.localIf} ↔ ${n.remoteIf||"?"})`);
+      }
+    }
+  });
+
+  /* cross-connect peers: a switch with no physical uplink of its own, but
+     cross-connected to a peer switch that DOES have one, is a SAME-TIER peer —
+     it reaches upstream through the peer via the cross-connect, drawn as a
+     lateral link between them (not a parent/child stack). */
+  const forcedLaterals = [];   // [{x, y, evidence}] same-tier crossconnects to draw
+  devices.forEach(d=>{
+    if(d.uplink || d.derived || d.type!=="switch") return;
+    if(!(d.interfaces||[]).some(i => /cross-?connect/i.test(i.role||""))) return;
+    const peer = devices.find(o => o.id!==d.id && o.type==="switch" && o.uplink &&
+      (o.interfaces||[]).some(i => /cross-?connect/i.test(i.role||"")));
+    if(peer){
+      d.peerOf = peer.id;   // keeps d on the switch tier; no uplink promotion
+      forcedLaterals.push({ x: peer.id, y: d.id,
+        evidence: `${d.hostname} reaches upstream via cross-connect to ${peer.hostname} (gateway ${d.l3Gateway?d.l3Gateway.ip:"?"} is L3, through ${peer.hostname})` });
+      evidencePromotions.push(`${d.hostname} ⇄ ${peer.hostname} — cross-connect peer (upstream via ${peer.hostname}; gateway is L3)`);
+    }
+  });
+
+  /* reverse CDP/LLDP: a would-be parent's neighbor table names this device
+     (APs/endpoints rarely export their own tables — the switch's table
+     is the evidence). Unique claimant at/above this device = its parent. */
+  devices.forEach(d=>{
+    if(d.uplink || d.derived) return;
+    const hn = String(d.hostname||"").toLowerCase().split(".")[0];
+    if(hn.length < 4) return;
+    const claimants = [];
+    devices.forEach(p=>{
+      if(p.id === d.id) return;
+      (p.neighbors||[]).forEach(n=>{
+        if(String(n.remoteHost||"").toLowerCase().split(".")[0] === hn &&
+           TYPE[p.type].tier <= TYPE[d.type].tier){
+          claimants.push({p,n});
+        }
+      });
+    });
+    const uniq = [...new Set(claimants.map(c=>c.p.id))];
+    if(uniq.length === 1){
+      const {p,n} = claimants[0];
+      d.uplink = p.id; d.uplinkBasis = "evidence: " + n.via;
+      evidencePromotions.push(`${d.hostname} ▲ ${p.hostname} — ${n.via} neighbor on ${p.hostname} ${n.localIf}`);
+    }
+  });
+
+  /* rule 3 — normalize backwards declared links (gateway evidence outranks type) */
+  linkFixNotes = [];
+  devices.forEach(d=>{
+    const p = d.uplink && byId[d.uplink];
+    if(!p) return;
+    const gwSaysBackwards = gwParent[p.id] && gwParent[p.id].pid === d.id;  // parent's gateway is the child
+    const gwConfirms      = gwParent[d.id] && gwParent[d.id].pid === p.id;  // child's gateway is the parent
+    const typeSaysBackwards = TYPE[p.type].tier > TYPE[d.type].tier;
+    if(gwSaysBackwards || (typeSaysBackwards && !gwConfirms)){
+      if(!p.uplink){
+        p.uplink = d.id; p.uplinkBasis = "auto-corrected";
+        delete d.uplink; delete d.uplinkBasis;
+        linkFixNotes.push(`⚠ ${d.hostname} declared uplink to ${p.hostname} — direction auto-corrected (${d.hostname} ▲ ${p.hostname})${gwSaysBackwards?" [gateway evidence]":""}`);
+      } else {
+        delete d.uplink; delete d.uplinkBasis;
+        linkFixNotes.push(`⚠ ${d.hostname} declared a backwards uplink to ${p.hostname} — dropped (the correct ${p.hostname} ▲ ${d.hostname} link already exists${p.uplinkBasis?" ["+p.uplinkBasis+"]":""})`);
+      }
+    }
+  });
+
+  /* rule 1 — derive the INTERNET node from WAN evidence in the configs */
+  if(!suppressDerived && !devices.some(x=>x.type==="internet")){
+    const evidence = [];
+    const edgeDevs = [];
+    devices.forEach(d=>{
+      if(gwParent[d.id]) return;                     // gateway owned inside the map → not the WAN edge
+      const gw = d.wan && ipOf(d.wan.gateway);
+      const hasIpGw = gw && isIp(gw);
+      /* Versa / SD-WAN edge proves WAN via named circuits or DHCP WAN ifaces */
+      const wanCircuits = d.wan && d.wan.circuits;
+      const wanIfaces = (d.interfaces||[]).filter(i=>/wan/i.test((i.name||"")+" "+(i.role||"")));
+      const hasCircuitWan = !!wanCircuits || wanIfaces.length>0;
+      if(!hasIpGw && !hasCircuitWan) return;
+      const lines = [];
+      if(hasIpGw) lines.push(`${d.hostname}: default route → ${gw}`);
+      if(wanCircuits) lines.push(`${d.hostname}: WAN circuits ${wanCircuits}`);
+      wanIfaces.forEach(w=>lines.push(`${d.hostname} ${w.name}: "${w.role||w.name}"${w.ip&&w.ip!=="—"?" ("+w.ip+")":""}`));
+      if(!lines.length) return;
+      evidence.push(...lines);
+      edgeDevs.push({d, gw: hasIpGw ? gw : "internet"});
+    });
+    if(edgeDevs.length){
+      const inet = { id:"__inet_derived", hostname:"INTERNET", type:"internet",
+        model:"Derived from config", derived:true, derivedFrom: evidence,
+        wan:{ gateway: edgeDevs[0].gw, notes:"auto-derived — click node for source lines" } };
+      devices.push(inet);
+      edgeDevs.forEach(({d})=>{
+        if(!d.uplink){ d.uplink = inet.id; d.uplinkBasis = "derived"; }
+      });
+      byId = Object.fromEntries(devices.map(x=>[x.id,x]));
+      ipOwner = buildIpOwner(); gwParent = buildGwParent();
+    }
+  }
+
+
+  computeInferredLinks();   // after promotions, so solid pairs aren't duplicated as dotted
+
+  /* add the forced cross-connect peer links as lateral (same-tier) links,
+     replacing any auto-detected duplicate for the same pair */
+  if(typeof forcedLaterals !== "undefined" && forcedLaterals.length){
+    forcedLaterals.forEach(fl=>{
+      const key = [fl.x, fl.y].sort().join("|");
+      inferredLinks = inferredLinks.filter(l => [l.x,l.y].sort().join("|") !== key);
+      inferredLinks.push({ x: fl.x, y: fl.y, evidence: fl.evidence, lateral: true });
+    });
+  }
+
+  /* rules 2 + 4 — rows: type as the base, evidence pushes children below parents */
+  const row = {};
+  devices.forEach(d => { row[d.id] = TYPE[d.type].tier; });
+  for(let pass = 0; pass < devices.length + 8; pass++){
+    let changed = false;
+    /* gateway chain — strongest, applied first (but a cross-connect peer
+       stays on its peer's tier: its gateway is L3, reached via the peer) */
+    devices.forEach(d=>{
+      if(d.peerOf) return;
+      const gp = gwParent[d.id];
+      if(gp && row[d.id] <= row[gp.pid]){ row[d.id] = row[gp.pid] + 1; changed = true; }
+    });
+    /* declared/manual/derived links — skip any push a gateway constraint contradicts */
+    devices.forEach(d=>{
+      const p = d.uplink && byId[d.uplink];
+      if(!p) return;
+      if(gwParent[p.id] && gwParent[p.id].pid === d.id) return;   // gw says p sits under d — don't fight it
+      if(row[d.id] <= row[p.id]){ row[d.id] = row[p.id] + 1; changed = true; }
+    });
+    if(!changed) break;
+  }
+
+  const rowsUsed = [...new Set(Object.values(row))].sort((a,b)=>a-b);
+  const slotOf = {};
+  rowsUsed.forEach((rv,slot)=>{ slotOf[rv] = slot; });
+  const slots = rowsUsed.map(()=>[]);
+  devices.forEach(d => slots[slotOf[row[d.id]]].push(d));
+
+  const maxPerSlot = Math.max(1, ...slots.map(s=>s.length));
+  /* strip grid is up to 3 chips wide (~264px); ensure columns are wide enough.
+     +150px of horizontal breathing room between same-tier peers (e.g. the two
+     switches) so their labels/VLAN text never crowd each other. */
+  const STRIP_GRID_W = 3*(84+6) - 6;                 // must match CHIP_W/GAPX/perRow below
+  const HGAP = 150;
+  const colMin = (advancedMode ? Math.max(NODE_W+56, STRIP_GRID_W+70) : (NODE_W+56)) + HGAP;
+  const W = Math.max(advancedMode?980:860, maxPerSlot*colMin+120);
+
+  /* Advanced mode: a switch/sdwan node grows a port-chip strip beneath it.
+     Pre-compute each device's strip and the extra height its row needs. */
+  const stripOf = {};
+  let stripRowExtra = new Array(slots.length).fill(0);
+  if(advancedMode){
+    slots.forEach((list,slot)=>{
+      let maxRows = 0;
+      list.forEach(d=>{
+        if(d.type!=="switch" && d.type!=="sdwan" && d.type!=="router") return;
+        const s = buildPortChips(d);
+        if(!s || !s.chips.length) return;
+        stripOf[d.id] = s;
+        const perRow = Math.max(1, Math.floor((NODE_W+150)/92));   // chips per strip row
+        const rows = Math.ceil((s.chips.length + (s.empties.length?1:0)) / perRow);
+        maxRows = Math.max(maxRows, rows);
+      });
+      stripRowExtra[slot] = maxRows>0 ? (18 + maxRows*24 + 10) : 0;   // header + rows
+    });
+    /* reserve room for a same-tier (lateral) inferred link's bow + label */
+    inferredLinks.forEach(l=>{
+      if(!l.lateral) return;
+      const s = slotOf[row[l.x]];
+      if(s===undefined) return;
+      const need = Math.max(stripHeight(l.x), stripHeight(l.y)) + 46;
+      stripRowExtra[s] = Math.max(stripRowExtra[s], need);
+    });
+  }
+  /* per-device strip pixel height, used to route edges below strips */
+  const CHIP_H_ = 22, GAPY_ = 6, perRowGlobal = Math.max(1, Math.floor((NODE_W+150)/90));
+  stripHeight = (id)=>{
+    const s = stripOf[id]; if(!s) return 0;
+    const rows = Math.ceil((s.chips.length + (s.empties.length?1:0)) / perRowGlobal);
+    return 8 + 18 + rows*(CHIP_H_+GAPY_);
+  };
+
+  /* resolve spacing from the selected mode */
+  TIER_H = SPACING[spacingMode].base;
+  const adaptive = !!SPACING[spacingMode].adaptive;
+  /* adaptive: rows whose children carry port labels get extra breathing room */
+  const rowLabelExtra = new Array(slots.length).fill(0);
+  if(adaptive){
+    devices.forEach(d=>{
+      if(!d.uplink || !byId[d.uplink]) return;
+      const childSlot = slotOf[row[d.id]];
+      const detail = ["internet","router","sdwan","switch"].includes(d.type);
+      if(detail && childSlot>0) rowLabelExtra[childSlot] = 40;   // add above the labeled child row
+    });
+  }
+
+  /* cumulative slot Y (variable height: base spacing + strips + adaptive) */
+  const slotY = [];
+  let cy = TOP;
+  slots.forEach((list,slot)=>{ slotY[slot]=cy; cy += TIER_H + stripRowExtra[slot] + (rowLabelExtra[slot+1]||0); });
+  const H = cy + 20;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  svg.setAttribute("width",W); svg.setAttribute("height",H);
+
+  const pos = {};
+  slots.forEach((list,slot)=>{
+    const n = list.length;
+    if(n === 1){
+      list.forEach(d=>{ pos[d.id] = {x: W/2, y: slotY[slot]}; });
+    } else {
+      /* fixed pitch = colMin (includes the +150 horizontal breathing room),
+         centered on the canvas so peers sit a consistent distance apart */
+      const totalW = (n-1)*colMin;
+      const startX = W/2 - totalW/2;
+      list.forEach((d,i)=>{ pos[d.id] = {x: startX + i*colMin, y: slotY[slot]}; });
+    }
+  });
+
+  /* keep per-slot counts for label-density decisions */
+  const slotCount = {};
+  devices.forEach(d => { slotCount[d.id] = slots[slotOf[row[d.id]]].length; });
+
+  /* tier bands — named by the device types actually in each row */
+  slots.forEach((list,slot)=>{
+    const y = slotY[slot] - NODE_H/2 - 14;
+    el("line",{x1:16,y1:y,x2:W-16,y2:y,class:"tier-line"},svg);
+    const names = [...new Set(list.map(d=>TIER_NAMES[TYPE[d.type].tier]))].join(" / ");
+    const tx = el("text",{x:20,y:y-6,class:"tier-label"},svg);
+    tx.textContent = names;
+  });
+
+  /* edges — ONLY from explicit uplink fields whose target was uploaded */
+  const edgeLayer = el("g",{},svg);
+
+  /* find the port a device uses toward another device (or toward the WAN).
+     Sources, in order: CDP/LLDP neighbor entry, interface description naming
+     the other device, or (for WAN) an interface labeled wan/outside/internet.
+     Returns null when the files don't say — no guessing. */
+  function mediaOf(port){
+    const n = String(port && port.name || "");
+    if(/^(gi|gigabitethernet|ge-)/i.test(n)) return "Gigabit";
+    if(/^(te|tengig|xe-)/i.test(n))          return "10-Gigabit";
+    if(/^(fa|fastethernet)/i.test(n))        return "FastEthernet";
+    if(/^(vni-)/i.test(n))                    return "Versa vni";
+    if(/^(eth|e\d|et)/i.test(n))              return "Ethernet";
+    return "";
+  }
+  function portToward(d, other){
+    const ifs = d.interfaces || [];
+    if(other === "wan"){
+      return ifs.find(i => /wan|outside|internet|isp/i.test((i.name||"")+" "+(i.role||""))) || null;
+    }
+    const hn = String(other.hostname||"").toLowerCase().split(".")[0];
+    if(hn.length >= 4){
+      const nb = (d.neighbors||[]).find(n => String(n.remoteHost||"").toLowerCase().split(".")[0] === hn);
+      if(nb){
+        const byName = ifs.find(i => i.name === nb.localIf);
+        if(byName) return byName;
+        return { name: nb.localIf, role: "(from "+nb.via+")" };
+      }
+      const byDesc = ifs.find(i => String(i.role||"").toLowerCase().includes(hn));
+      if(byDesc) return byDesc;
+    }
+    /* PARENT facing a downstream child: this device (d) is the SD-WAN/router,
+       and `other` is a device below it. Its port toward the child is the LAN
+       interface that owns the child's gateway IP (e.g. Versa vni-0/2.20 owns
+       192.168.20.1, which is the switch's default-gateway). */
+    if((d.type === "sdwan" || d.type === "router") && other && other !== "wan"){
+      const childGw = other.wan && ipOf(other.wan.gateway);
+      if(childGw){
+        const byIp = ifs.find(i => i.ip && ipOf(i.ip) === childGw);
+        if(byIp) return byIp;
+        if(Array.isArray(d.lanGateways)){
+          const lg = d.lanGateways.find(g => g.ip === childGw);
+          if(lg) return { name: lg.name, role: lg.role || "LAN" };
+        }
+      }
+      /* fallback: the LAN sub-interface (non-WAN) */
+      const lan = ifs.find(i => /lan/i.test((i.role||"")+" "+(i.name||"")) && !/wan/i.test((i.role||"")+" "+(i.name||"")));
+      if(lan) return lan;
+    }
+    /* uplink toward an SD-WAN / router parent: the trunk described SDWAN/UPLINK */
+    if(other.__isParent || other.type === "sdwan" || other.type === "router"){
+      const up = ifs.find(i => /sdwan|sd-wan|uplink|wan-lan/i.test(i.role||""))
+              || ifs.find(i => /uplink/i.test(i.role||""));
+      if(up) return up;
+      /* Versa parent faces the LAN via its LAN sub-interface */
+      if(d.type === "sdwan"){
+        const lan = ifs.find(i => /lan/i.test((i.role||"")+" "+(i.name||"")) && !/wan/i.test((i.role||"")+" "+(i.name||"")));
+        if(lan) return lan;
+      }
+    }
+    /* switch↔switch crossconnect */
+    if(other.type === "switch" && d.type === "switch"){
+      const xc = ifs.find(i => /cross-?connect/i.test(i.role||""));
+      if(xc) return xc;
+    }
+    return null;
+  }
+
+  /* draw a port label anchored to one end of a link */
+  function drawPortLabel(x, y, port, ownerColor, extraLines, compact){
+    const lines = [];
+    const desc = port.role ? String(port.role) : "";
+    if(compact){
+      lines.push({ text: port.name, main:true });     // name only in the simple view
+    } else {
+      lines.push({ text: port.name + (desc ? "  ·  " + (desc.length>30 ? desc.slice(0,29)+"…" : desc) : ""), main:true });
+      (extraLines||[]).forEach(l => l && lines.push({ text: l.length>40 ? l.slice(0,39)+"…" : l }));
+    }
+    const w = Math.max(...lines.map(l=>l.text.length)) * 5.6 + 16;
+    const h = lines.length*12 + 8;
+    el("rect",{x:x, y:y, width:w, height:h, class:"edge-label-bg", rx:4,
+      style:"stroke:var(--panel-edge);stroke-width:1"},edgeLayer);
+    el("circle",{cx:x-4, cy:y+h/2, r:3.5, style:`fill:${ownerColor}`},edgeLayer);
+    lines.forEach((l,i)=>{
+      const t = el("text",{x:x+8, y:y+13+i*12, class:"edge-label",
+        style:"text-anchor:start"+(l.main?";fill:var(--ink);font-weight:600":"")},edgeLayer);
+      t.textContent = l.text;
+    });
+    return h;
+  }
+
+  const parentPortLabelsDrawn = new Set();   // avoid duplicate parent-side labels for a shared port
+  devices.forEach(d=>{
+    if(!d.uplink || !byId[d.uplink]) return;   // no invention: missing target = no edge
+    const parent = byId[d.uplink];
+    /* rule 2: always draw top-down — after rule-3 normalization the parent
+       is never in a lower row, but same-row (same-type) chains are legal */
+    const a = pos[d.uplink], b = pos[d.id];
+    /* if the parent shows a port strip (Advanced), start the edge below it */
+    const parentStrip = (advancedMode && stripOf[d.uplink]) ? stripHeight(d.uplink) : 0;
+    const aBottom = a.y + NODE_H/2 + parentStrip;
+    let path;
+    if(Math.abs(a.y - b.y) < 5){               // same row: bow underneath
+      const bow = Math.max(aBottom, b.y + NODE_H/2 + parentStrip) + 24;
+      path = `M ${a.x} ${aBottom} C ${a.x} ${bow}, ${b.x} ${bow}, ${b.x} ${b.y+NODE_H/2+((advancedMode&&stripOf[d.id])?stripHeight(d.id):0)}`;
+    } else {
+      const midY = (aBottom + (b.y-NODE_H/2))/2;
+      path = `M ${a.x} ${aBottom} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y-NODE_H/2}`;
+    }
+    const edge = el("path",{d:path,class:"edge"},edgeLayer);
+    el("path",{d:path,class:"edge-flow"},edgeLayer);
+
+    const isWanLink = parent.type === "internet";
+    const childPort  = isWanLink ? portToward(d, "wan")
+                                 : portToward(d, Object.assign({__isParent:true}, parent));
+    const parentPort = isWanLink ? null : portToward(parent, d);
+    const detailTier = ["internet","router","sdwan","switch"].includes(d.type);
+
+    if(detailTier && (childPort || parentPort)){
+      if(advancedMode){
+        /* child-side label: full detail above the child node */
+        if(childPort){
+          const extras = [];
+          const med = mediaOf(childPort);
+          if(med) extras.push(med);
+          if(childPort.ip && childPort.ip !== "—") extras.push(childPort.ip);
+          if(isWanLink){
+            if(d.wan && d.wan.gateway && !(extras.join(" ")).includes("gw")) {
+              extras.push("gw " + d.wan.gateway);
+            }
+            const descHasCkt = d.wan && d.wan.circuit && String(childPort.role||"").includes(d.wan.circuit);
+            if(d.wan && d.wan.circuit && !descHasCkt) extras.push("circuit " + d.wan.circuit);
+          }
+          drawPortLabel(b.x + 14, b.y - NODE_H/2 - (14 + (extras.length)*12 + 8),
+            childPort, `var(${TYPE[d.type].cssVar})`, extras, false);
+        }
+        /* parent-side label — anchored directly beneath the parent node (top of
+           the gap), while the child label sits just above the child (bottom of
+           the gap). Horizontal offset to opposite sides guarantees no overlap
+           even when tiers are close. Drawn once per shared parent port. */
+        if(parentPort && !stripOf[parent.id]){
+          const key = parent.id + "|" + parentPort.name;
+          if(!parentPortLabelsDrawn.has(key)){
+            parentPortLabelsDrawn.add(key);
+            const plW = parentPort.name.length * 5.6 + 24;
+            drawPortLabel(a.x - plW - 12, a.y + NODE_H/2 + 8,
+              parentPort, `var(${TYPE[parent.type].cssVar})`, [], true);   // compact: name only
+          }
+        }
+      } else {
+        /* DEFAULT view — show the compact port NAME at each end */
+        if(childPort){
+          drawPortLabel(b.x + 12, b.y - NODE_H/2 - 22,
+            childPort, `var(${TYPE[d.type].cssVar})`, [], true);
+        }
+        if(parentPort){
+          const key = parent.id + "|" + parentPort.name;
+          if(!parentPortLabelsDrawn.has(key)){
+            parentPortLabelsDrawn.add(key);
+            const px = a.x + (b.x - a.x)*0.12 + 12;
+            drawPortLabel(px, a.y + NODE_H/2 + 6, parentPort, `var(${TYPE[parent.type].cssVar})`, [], true);
+          }
+        }
+      }
+      /* hover tooltip on the edge either way */
+      const tt = document.createElementNS(NS,"title");
+      tt.textContent = [
+        parentPort ? `${parent.hostname} ${parentPort.name}${parentPort.role?" — "+parentPort.role:""}` : null,
+        childPort  ? `${d.hostname} ${childPort.name}${childPort.role?" — "+childPort.role:""}` : null,
+      ].filter(Boolean).join("  ↔  ");
+      edge.appendChild(tt);
+    } else if(childPort || parentPort){
+      /* AP / endpoint links: keep the canvas clean — ports go in a hover tooltip */
+      const tt = document.createElementNS(NS,"title");
+      tt.textContent = [
+        parentPort ? `${parent.hostname} ${parentPort.name}${parentPort.role?" — "+parentPort.role:""}` : null,
+        childPort  ? `${d.hostname} ${childPort.name}${childPort.role?" — "+childPort.role:""}` : null,
+      ].filter(Boolean).join("  ↔  ");
+      edge.appendChild(tt);
+    }
+  });
+
+  /* inferred edges — dotted, evidence-backed, toggleable */
+  const deferredXC = [];   // crossconnects to draw port-to-port after strips render
+  if(showInferred){
+    inferredLinks.forEach(l=>{
+      /* Advanced: a lateral crossconnect is drawn chip-to-chip (gi22↔gi22)
+         in a later pass, once port-chip positions are known. */
+      if(advancedMode && l.lateral){ deferredXC.push(l); return; }
+      let a = pos[l.x], b = pos[l.y];
+      if(a.y > b.y){ const t=a; a=b; b=t; }          // draw top → bottom
+      let path;
+      if(Math.abs(a.y-b.y) < 5){                     // same tier: bow underneath
+        const strip = advancedMode ? Math.max(stripHeight(l.x), stripHeight(l.y)) : 0;
+        const y0 = a.y + NODE_H/2 + strip;
+        const bow = y0 + 28;
+        path = `M ${a.x} ${y0} C ${a.x} ${bow}, ${b.x} ${bow}, ${b.x} ${y0}`;
+      } else {
+        const midY = (a.y+b.y)/2;
+        path = `M ${a.x} ${a.y+NODE_H/2} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y-NODE_H/2}`;
+      }
+      /* a confirmed cross-connect draws identically to the other connections:
+         solid --edge base + animated --edge-flow overlay. Only genuinely
+         inferred (non-lateral) links use the dotted edge-inferred style. */
+      let p;
+      if(l.lateral){
+        p = el("path",{d:path,class:"edge"},edgeLayer);
+        el("path",{d:path,class:"edge-flow"},edgeLayer);
+      } else {
+        p = el("path",{d:path,class:"edge-inferred"},edgeLayer);
+      }
+      const t = document.createElementNS(NS,"title");
+      t.textContent = (l.lateral?"Cross-connect: ":"Inferred: ") + l.evidence;
+      p.appendChild(t);
+
+      /* default view: lateral crossconnect — a port label beside EACH switch
+         (port-near-device), plus a small media note at the dip. */
+      if(l.lateral && Math.abs(a.y-b.y) < 5){
+        const dx = byId[l.x], dy = byId[l.y];
+        const px = portToward(dx, dy), py = portToward(dy, dx);
+        const bowY = a.y + NODE_H/2 + 28;
+        const put = (cx, port, anchorX) => {
+          if(!port) return;
+          const w = port.name.length*5.6 + 16;
+          const lx = anchorX==="left" ? cx : cx - w;   // keep near the node, inside the span
+          el("rect",{x:lx, y:a.y+NODE_H/2+4, width:w, height:18, class:"edge-label-bg", rx:4,
+            style:"stroke:var(--link-inf);stroke-width:1"},edgeLayer);
+          const tx = el("text",{x:lx+w/2, y:a.y+NODE_H/2+16, class:"edge-label",
+            style:"text-anchor:middle;fill:var(--ink);font-weight:600"},edgeLayer);
+          tx.textContent = port.name;
+        };
+        /* a is the left endpoint (drawn top→bottom already ensures a.x<=b.x? not for lateral) */
+        const leftId  = a.x <= b.x ? l.x : l.y;
+        const rightId = a.x <= b.x ? l.y : l.x;
+        const leftPort  = portToward(byId[leftId],  byId[rightId]);
+        const rightPort = portToward(byId[rightId], byId[leftId]);
+        const lx = Math.min(a.x,b.x), rx = Math.max(a.x,b.x);
+        put(lx + 8, leftPort,  "left");
+        put(rx - 8, rightPort, "right");
+        const med = mediaOf(px || py);
+        if(med){
+          const midX=(a.x+b.x)/2, mw=med.length*5.6+14;
+          el("rect",{x:midX-mw/2, y:bowY-8, width:mw, height:16, class:"edge-label-bg", rx:4,
+            style:"stroke:var(--panel-edge);stroke-width:1"},edgeLayer);
+          const mt=el("text",{x:midX, y:bowY+4, class:"edge-label",
+            style:"text-anchor:middle;fill:var(--muted)"},edgeLayer);
+          mt.textContent = med;
+        }
+      }
+    });
+  }
+
+  /* nodes */
+  const chipPos = {};   // chipPos[deviceId][portName] = {x,y,w,h} absolute (for port-to-port links)
+  devices.forEach(d=>{
+    const {x,y} = pos[d.id];
+    const t = TYPE[d.type];
+    const color = `var(${t.cssVar})`;
+    const orphan = d.uplink && !byId[d.uplink];
+    const g = el("g",{class:"node"+(orphan?" orphan":"")+(d.derived?" derived":""),
+      transform:`translate(${x-NODE_W/2},${y-NODE_H/2})`},svg);
+    el("rect",{class:"body",width:NODE_W,height:NODE_H,rx:8,style:`stroke:${color}`},g);
+    el("rect",{width:4,height:NODE_H,rx:2,style:`fill:${color}`},g);
+    const glyph = el("text",{x:15,y:(advancedMode?36:33),class:"glyph",style:`fill:${color}`},g);
+    glyph.textContent = t.glyph;
+    const host = el("text",{x:40,y:22,class:"host"},g);
+    host.textContent = String(d.hostname).slice(0,18);
+    const ip = el("text",{x:40,y:38,class:"ip"},g);
+    ip.textContent = d.mgmtIp
+      || (d.type==="internet" && d.wan && d.wan.circuit ? String(d.wan.circuit).slice(0,20) : "");
+    const tagW = t.label.length*5.4+12;
+    el("rect",{x:NODE_W-tagW-8,y:-7,width:tagW,height:14,rx:3,style:`fill:${color}`},g);
+    const tt = el("text",{class:"tagtxt",x:NODE_W-tagW-2,y:3.5},g);
+    tt.textContent = t.label.toUpperCase();
+    if(orphan){
+      const w = el("text",{x:NODE_W-14,y:NODE_H-8,class:"orphmark"},g);
+      w.textContent = "⚠";
+    }
+    if(d.derived){
+      el("rect",{x:8,y:-7,width:58,height:14,rx:3,style:"fill:var(--brand)"},g);
+      const dt = el("text",{class:"tagtxt",x:14,y:3.5,style:"fill:#ffffff"},g);
+      dt.textContent = "DERIVED";
+    }
+    /* port count badge — on the IP line, right side (keeps the VLAN line clear) */
+    if(Array.isArray(d.interfaces) && d.interfaces.length){
+      const pc = el("text",{x:NODE_W-10,y:38,
+        style:"font-family:var(--mono);font-size:9px;fill:var(--faint);text-anchor:end"},g);
+      pc.textContent = d.interfaces.length + "p";
+    }
+    /* VLAN line INSIDE the box (from the config) — only in Advanced view */
+    let vlanTxt = (d.switching && d.switching.vlans) ? "VLANs " + d.switching.vlans
+                : (d.lan && d.lan.vlan) ? String(d.lan.vlan) : "";
+    if(vlanTxt && advancedMode){
+      vlanTxt = vlanTxt.length > 26 ? vlanTxt.slice(0,25)+"…" : vlanTxt;
+      const vt = el("text",{x:40, y:55,
+        style:"font-family:var(--mono);font-size:8.5px;fill:var(--c-switch)"},g);
+      vt.textContent = vlanTxt;
+    }
+    g.addEventListener("click",()=>select(d.id));
+    nodeEls[d.id]=g;
+
+    /* Advanced: physical port-chip strip beneath the node */
+    if(advancedMode && stripOf[d.id]){
+      const {chips, empties} = stripOf[d.id];
+      const used = (d.interfaces||[]).filter(i=>(i.role&&i.role!=="")||(i.vlan&&i.vlan!==""&&i.vlan!=="—")).length;
+      const strip = el("g",{transform:`translate(0,${NODE_H+8})`},g);
+      const CHIP_W = 84, CHIP_H = 22, GAPX = 6, GAPY = 6;
+      const perRow = Math.max(1, Math.floor((NODE_W+150)/(CHIP_W+GAPX)));
+      const startX = -( (perRow*(CHIP_W+GAPX)-GAPX) - NODE_W )/2;   // center the grid on the node
+      const hdr = el("text",{x:startX,y:0,style:"font-family:var(--mono);font-size:8.5px;fill:var(--faint)"},strip);
+      hdr.textContent = `${used} of ${d.interfaces.length} ports used`;
+      const items = chips.slice();
+      if(empties.length) items.push({empty:true, ports:empties, label:"empty", n:empties.length});
+      items.forEach((c,idx)=>{
+        const r = Math.floor(idx/perRow), col = idx%perRow;
+        const cx = startX + col*(CHIP_W+GAPX);
+        const cy2 = 8 + r*(CHIP_H+GAPY);
+        const cg = el("g",{transform:`translate(${cx},${cy2})`, style:"cursor:pointer"},strip);
+        const stroke = c.empty ? "var(--panel-edge)" : c.color;
+        el("rect",{width:CHIP_W,height:CHIP_H,rx:4,class:"portchip",
+          style:`fill:var(--panel);stroke:${stroke};stroke-width:${c.trunk?1.4:1}${c.trunk&&c.dir==="↓"?";stroke-dasharray:3 2":""}`},cg);
+        const nm = el("text",{x:5,y:9,style:"font-family:var(--mono);font-size:8px;font-weight:700;fill:var(--ink)"},cg);
+        nm.textContent = (c.empty?portRange(c.ports):portRange(c.ports)) + (c.dir||"");
+        const lb = el("text",{x:5,y:18,style:`font-family:var(--mono);font-size:7px;fill:${c.empty?"var(--faint)":"var(--muted)"}`},cg);
+        lb.textContent = c.empty ? "empty" : (c.label.slice(0,11) + (c.n>1?" ×"+c.n:""));
+        if(!c.empty){
+          const tEl = document.createElementNS(NS,"title");
+          tEl.textContent = `${c.ports.join(", ")} — ${c.label}${c.vlan?" ("+c.vlan+")":""}`;
+          cg.appendChild(tEl);
+          cg.addEventListener("click",(ev)=>{ ev.stopPropagation(); select(d.id); });
+        }
+        /* record absolute position of each chip's ports (for port-to-port links) */
+        const absX = (x - NODE_W/2) + cx;
+        const absY = (y - NODE_H/2) + (NODE_H + 8) + cy2;
+        (chipPos[d.id] = chipPos[d.id] || {});
+        c.ports.forEach(pn => { chipPos[d.id][pn] = {x:absX, y:absY, w:CHIP_W, h:CHIP_H, chip:c}; });
+      });
+    }
+  });
+
+  /* ── port-to-port crossconnect (Advanced): connect the actual gi22↔gi22 chips,
+     drawn with the SAME solid edge + animated flow as every other connection,
+     and labeled near each device (port-near-owner), like the simple view. ── */
+  deferredXC.forEach(l=>{
+    const dx = byId[l.x], dy = byId[l.y];
+    const px = portToward(dx, dy), py = portToward(dy, dx);   // the crossconnect port on each side
+    const cpx = px && chipPos[l.x] && chipPos[l.x][px.name];
+    const cpy = py && chipPos[l.y] && chipPos[l.y][py.name];
+    if(!cpx || !cpy){
+      /* fallback: node-to-node bow if a chip wasn't found */
+      let a = pos[l.x], b = pos[l.y]; if(a.y>b.y){const t=a;a=b;b=t;}
+      const s = Math.max(stripHeight(l.x), stripHeight(l.y));
+      const y0=a.y+NODE_H/2+s, bow=y0+28;
+      const fp=`M ${a.x} ${y0} C ${a.x} ${bow}, ${b.x} ${bow}, ${b.x} ${y0}`;
+      el("path",{d:fp,class:"edge"},svg);
+      el("path",{d:fp,class:"edge-flow"},svg);
+      return;
+    }
+    /* anchor at the bottom-center of each crossconnect chip, bow between them */
+    let A = {x:cpx.x + cpx.w/2, y:cpx.y + cpx.h, port:px};
+    let B = {x:cpy.x + cpy.w/2, y:cpy.y + cpy.h, port:py};
+    if(A.x > B.x){ const t=A; A=B; B=t; }
+    const dip = Math.max(A.y, B.y) + 30;
+    const path = `M ${A.x} ${A.y} C ${A.x} ${dip}, ${B.x} ${dip}, ${B.x} ${B.y}`;
+    /* same styling as other connections: solid edge base + animated flow */
+    const p = el("path",{d:path,class:"edge"},svg);
+    el("path",{d:path,class:"edge-flow"},svg);
+    const ti = document.createElementNS(NS,"title");
+    ti.textContent = "Cross-connect: " + l.evidence;
+    p.appendChild(ti);
+    /* small port anchors on each chip */
+    el("circle",{cx:A.x, cy:A.y, r:3, style:"fill:var(--link-inf)"},svg);
+    el("circle",{cx:B.x, cy:B.y, r:3, style:"fill:var(--link-inf)"},svg);
+    /* port label beside EACH device (port-near-owner), not one combined label */
+    const tag = (side) => {
+      if(!side.port) return;
+      const w = side.port.name.length*5.6 + 14;
+      const lx = side.x - w/2;
+      el("rect",{x:lx, y:side.y+4, width:w, height:16, class:"edge-label-bg", rx:4,
+        style:"stroke:var(--link-inf);stroke-width:1"},svg);
+      const tx = el("text",{x:side.x, y:side.y+15, class:"edge-label",
+        style:"text-anchor:middle;fill:var(--ink);font-weight:600"},svg);
+      tx.textContent = side.port.name;
+    };
+    tag(A); tag(B);
+    /* media note centered at the dip */
+    const med = mediaOf(px || py);
+    if(med){
+      const midX=(A.x+B.x)/2, mw=med.length*5.6+14;
+      el("rect",{x:midX-mw/2, y:dip-8, width:mw, height:16, class:"edge-label-bg", rx:4,
+        style:"stroke:var(--panel-edge);stroke-width:1"},svg);
+      const mt=el("text",{x:midX, y:dip+4, class:"edge-label",
+        style:"text-anchor:middle;fill:var(--muted)"},svg);
+      mt.textContent = med;
+    }
+  });
+
+  /* legend — only types actually present in the uploaded data */
+  const presentTypes = [...new Set(devices.map(d=>d.type))];
+  $("legend").innerHTML = Object.entries(TYPE)
+    .filter(([k])=>presentTypes.includes(k))
+    .map(([,t])=>
+    `<div class="li"><span class="sw" style="background:var(${t.cssVar})"></span>${t.label}</div>`
+  ).join("")
+  + `<div class="li"><span class="ln solid"></span>declared link</div>`
+  + (showInferred ? `<div class="li"><span class="ln dotted"></span>inferred (evidence)</div>` : "");
+
+  applySearch();
+  if(typeof buildWanPanel === "function" && showWan) buildWanPanel();
+}
+
+/* ── Detail panel ────────────────────────── */
+function kvRow(k,v){ return v?`<span class="k">${esc(k)}</span><span class="v">${esc(v)}</span>`:""; }
+function kvSection(title,obj,labels){
+  if(!obj) return "";
+  const rows = Object.entries(labels).map(([key,label])=>kvRow(label,obj[key])).join("");
+  return rows?`<div class="p-sec"><h3>${title}</h3><div class="kv">${rows}</div></div>`:"";
+}
+
+function select(id){
+  selected = id;
+  Object.values(nodeEls).forEach(n=>n.classList.remove("selected"));
+  nodeEls[id].classList.add("selected");
+  const d = byId[id], t = TYPE[d.type];
+  const color = `var(${t.cssVar})`;
+  const children = devices.filter(x=>x.uplink===id);
+  const orphan = d.uplink && !byId[d.uplink];
+
+  let html = `
+    <div class="p-head">
+      <span class="p-led" style="color:${color};background:${color}"></span>
+      <div class="p-title">
+        <div class="h">${esc(d.hostname)}</div>
+        <div class="s">${t.label}${d.model?" · "+esc(d.model):""}</div>
+      </div>
+      <button id="closeBtn" title="Close">✕</button>
+    </div>
+    ${kvSection("Identity", d, {vendor:"Vendor", model:"Model", serial:"Serial", firmware:"OS / Firmware", uptime:"Uptime", mgmtIp:"Mgmt IP", mac:"Base MAC", source:"Source file", typeNote:"Type basis"})}
+    ${kvSection("WAN Side", d.wan, {ip:"WAN IP", gateway:"Gateway", circuit:"Circuit",
+        nat:"NAT", overlay:"Overlay", sla:"SLA", notes:"Notes"})}
+    ${kvSection("LAN Side", d.lan, {ip:"LAN IP", vlan:"VLANs", dhcp:"DHCP",
+        ssid:"SSIDs", radio:"Radios"})}
+    ${kvSection("Routing (L3)", d.routing, {routerId:"Router ID", asn:"AS number",
+        protocols:"Protocols", defaultRoute:"Default route", ha:"HSRP/VRRP"})}
+    ${kvSection("Switching (L2)", d.switching, {vlans:"VLANs", stpMode:"STP mode",
+        stpRoot:"STP root", stpPriority:"STP priority", vtpDomain:"VTP domain",
+        vtpMode:"VTP mode", etherchannel:"EtherChannel", stack:"Stack", poe:"PoE budget"})}`;
+
+  /* Versa SD-WAN facts */
+  if(d.versa){
+    const v = d.versa;
+    const rows = [];
+    if(v.org)       rows.push(["Org / tenant", v.org]);
+    if(v.siteId)    rows.push(["Site ID", v.siteId]);
+    if(v.siteType)  rows.push(["Site type", v.siteType]);
+    if(v.chassis)   rows.push(["Chassis", v.chassis]);
+    if(v.natPublic) rows.push(["Public NAT", v.natPublic]);
+    if(v.location)  rows.push(["Location", v.location]);
+    if(v.circuits&&v.circuits.length) rows.push(["WAN circuits", v.circuits.join(", ")]);
+    if(v.controllers&&v.controllers.length) rows.push(["Controllers", v.controllers.join(", ")]);
+    const kv = rows.map(r=>`<div class="k">${esc(r[0])}</div><div class="v">${esc(String(r[1]))}</div>`).join("");
+    html += `<div class="p-sec"><h3>SD-WAN <span style="color:var(--faint)">(Versa)</span></h3><div class="kv">${kv}</div>`;
+    if(v.lanSubnets&&v.lanSubnets.length){
+      html += `<table class="if" style="margin-top:8px"><tr><th>LAN subnet</th><th>Zone</th><th>VLAN</th></tr>` +
+        v.lanSubnets.map(s=>`<tr><td>${esc(s.subnet)}</td><td class="dim">${esc(s.role||"")}</td><td class="dim">${esc(s.vlan||"")}</td></tr>`).join("") +
+        `</table>`;
+    }
+    html += `</div>`;
+  }
+
+  /* CDP/LLDP neighbors — the industry-standard link source */
+  if(Array.isArray(d.neighbors) && d.neighbors.length){
+    html += `<div class="p-sec"><h3>Neighbors <span style="color:var(--faint)">(CDP / LLDP)</span></h3>
+      <table class="if"><tr><th>Local</th><th>Remote device</th><th>Remote port</th><th>Via</th></tr>
+      ${d.neighbors.map(n=>{
+        const match = devices.find(o=>o.id!==id && o.hostname &&
+          String(n.remoteHost||"").toLowerCase().includes(String(o.hostname).toLowerCase().split(".")[0]));
+        const rh = match
+          ? `<span class="chip" data-goto="${esc(match.id)}" style="margin:0">${esc(n.remoteHost)}</span>`
+          : esc(n.remoteHost||"");
+        return `<tr><td>${esc(n.localIf||"")}</td><td>${rh}</td>
+          <td class="dim">${esc(n.remoteIf||"")}</td><td class="dim">${esc(n.via||"")}</td></tr>`;
+      }).join("")}
+      </table></div>`;
+  }
+
+  if(d.derived && Array.isArray(d.derivedFrom)){
+    html += `<div class="p-sec"><h3>Derived From <span style="color:var(--faint)">(config lines)</span></h3>
+      ${d.derivedFrom.map(l=>`<div class="evi">${esc(l)}</div>`).join("")}
+      <button class="btn" id="removeDerivedBtn" style="margin-top:6px">Remove derived node</button></div>`;
+  }
+  html += `<div class="p-sec"><h3>Topology Links <span style="color:var(--faint)">(as declared in data)</span></h3>`;
+  if(orphan){
+    html += `<div class="p-warn" style="margin-bottom:8px">⚠ uplink "${esc(d.uplink)}" not found in uploaded data — link not drawn</div>`;
+  } else if(d.uplink){
+    html += `<div style="margin-bottom:4px"><span class="chip" data-goto="${esc(d.uplink)}"><span class="arrow">▲</span>${esc(byId[d.uplink].hostname)}</span>${d.uplinkBasis?`<span class="basis-tag">${esc(d.uplinkBasis)}</span>`:""}</div>`;
+  }
+  if(children.length){
+    html += children.map(c=>`<span class="chip" data-goto="${esc(c.id)}"><span class="arrow">▼</span>${esc(c.hostname)}</span>`).join("");
+  }
+  if(!d.uplink && !children.length) html += `<span style="color:var(--faint);font-size:12px">no links declared</span>`;
+  html += `</div>`;
+
+  /* inferred links touching this device, with their evidence */
+  const myInferred = inferredLinks.filter(l=>l.x===id || l.y===id);
+  if(myInferred.length){
+    html += `<div class="p-sec"><h3>Inferred Links <span style="color:var(--faint)">(from config evidence)</span></h3>`;
+    myInferred.forEach(l=>{
+      const otherId = l.x===id ? l.y : l.x;
+      html += `<div><span class="chip" data-goto="${esc(otherId)}"><span class="arrow">⋯</span>${esc(byId[otherId].hostname)}</span></div>
+               <div class="evi">${esc(l.evidence)}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  /* manual type editor — fixes any misclassification and re-tiers instantly */
+  html += `<div class="p-sec"><h3>Device Type <span style="color:var(--faint)">(${d.typeNote==="manual"?"manual override":"tier placement"})</span></h3>
+    <select class="uplink-sel" id="typeSel">
+      ${Object.entries(TYPE).map(([k,tt])=>
+        `<option value="${k}" ${d.type===k?"selected":""}>${tt.label}</option>`).join("")}
+    </select></div>`;
+
+  /* manual uplink editor — user-declared, exportable */
+  html += `<div class="p-sec"><h3>Set Uplink <span style="color:var(--faint)">(manual override)</span></h3>
+    <select class="uplink-sel" id="uplinkSel">
+      <option value="">— no uplink —</option>
+      ${devices.filter(o=>o.id!==id).map(o=>
+        `<option value="${esc(o.id)}" ${d.uplink===o.id?"selected":""}>${esc(o.hostname)} (${esc(o.id)})</option>`).join("")}
+    </select></div>`;
+
+  if(Array.isArray(d.interfaces) && d.interfaces.length){
+    const ips = d.interfaces.filter(i=>i.ip && i.ip!=="—").length;
+    html += `<div class="p-sec"><h3>Ports &amp; Configured IPs
+      <span style="color:var(--faint)">(${d.interfaces.length} ports · ${ips} with IP)</span></h3>
+      <table class="if"><tr><th>Port</th><th>Description</th><th>Configured IP</th><th>VLAN</th><th>Speed</th><th>State</th></tr>
+      ${d.interfaces.map(i=>{
+        const sd = [i.speed,i.duplex].filter(Boolean).join(" ");
+        const hasIp = i.ip && i.ip!=="—";
+        return `<tr>
+        <td>${esc(i.name||"")}</td>
+        <td class="dim">${esc(i.role||"")}</td>
+        <td${hasIp?' style="color:var(--c-switch)"':' class="dim"'}>${hasIp?esc(i.ip):"— (L2/unnumbered)"}</td>
+        <td class="dim">${esc(i.vlan||"")}</td>
+        <td class="dim">${esc(sd)}</td>
+        <td>${esc(i.state||"")}</td></tr>`;}).join("")}
+      </table></div>`;
+  }
+
+  const panel = $("panel");
+  panel.innerHTML = html;
+  panel.classList.add("open");
+  panel.querySelector("#closeBtn").onclick = closePanel;
+  panel.querySelectorAll(".chip[data-goto]").forEach(ch=>{
+    ch.onclick = ()=>select(ch.dataset.goto);
+  });
+  const rdb = panel.querySelector("#removeDerivedBtn");
+  if(rdb) rdb.onclick = ()=>{
+    suppressDerived = true;
+    devices = devices.filter(x=>!x.derived);
+    devices.forEach(x=>{ if(x.uplinkBasis==="derived"){ delete x.uplink; delete x.uplinkBasis; } });
+    render();
+    setStatus("Derived INTERNET node removed. It will not be re-added until new data is loaded.");
+  };
+  const typeSel = panel.querySelector("#typeSel");
+  if(typeSel) typeSel.onchange = ()=>{
+    const prev = d.type;
+    d.type = typeSel.value;
+    d.typeNote = "manual";
+    render();
+    select(id);
+    setStatus(`${d.hostname} re-classified ${prev} → ${d.type} and moved to the ${TYPE[d.type].label} tier. Use "Export JSON" to save it.`);
+  };
+  const sel = panel.querySelector("#uplinkSel");
+  if(sel) sel.onchange = ()=>{
+    const val = sel.value;
+    if(val){ d.uplink = val; d.uplinkBasis = "manual"; }
+    else { delete d.uplink; delete d.uplinkBasis; }
+    render();                                  // rule 3 may flip a backwards selection
+    select(id);
+    if(linkFixNotes.length){
+      setStatus(linkFixNotes.join("\n") + `\nLink stored top-down. Use "Export JSON" to save it.`, true);
+    } else {
+      setStatus(val
+        ? `Manual link set: ${d.hostname} ▲ ${byId[val].hostname}. Use "Export JSON" to save it.`
+        : `Uplink removed from ${d.hostname}.`);
+    }
+  };
+}
+function closePanel(){
+  $("panel").classList.remove("open");
+  Object.values(nodeEls).forEach(n=>n.classList.remove("selected"));
+  selected = null;
+}
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closePanel(); });
+
+/* ── Search ──────────────────────────────── */
+function applySearch(){
+  const q = $("search").value.trim().toLowerCase();
+  let hits = 0;
+  devices.forEach(d=>{
+    const hay = [d.hostname,d.mgmtIp,d.mac,d.model,
+      d.wan&&d.wan.ip, d.lan&&d.lan.ip].filter(Boolean).join(" ").toLowerCase();
+    const match = q && hay.includes(q);
+    if(nodeEls[d.id]){
+      nodeEls[d.id].classList.toggle("hit", !!match);
+      nodeEls[d.id].classList.toggle("dimmed", !!q && !match);
+    }
+    if(match) hits++;
+  });
+  $("searchCount").textContent = q ? `${hits} match${hits===1?"":"es"}` : "";
+}
+$("search").addEventListener("input",applySearch);
+
+/* ── Text config parser (strictly literal extraction) ──
+   One device per text file. Only values physically present in the
+   file are used. Type: directive > heuristic (flagged). Uplink:
+   directive ONLY — never inferred.                                  */
+function maskToCidr(mask){
+  const parts = mask.split(".").map(Number);
+  if(parts.length!==4 || parts.some(isNaN)) return null;
+  let bits = 0;
+  for(const p of parts){ bits += ((p>>>0).toString(2).match(/1/g)||[]).length; }
+  return bits;
+}
+function detectTypeHeuristic(s){
+  /* Weighted scoring, not first-match: a router that happens to have a
+     'switchport' line (very common on ISRs / 'no switchport') must not be
+     mislabelled a switch. Strongest single signal wins ties sensibly. */
+  /* SD-WAN only on genuine SD-WAN constructs — NOT a port merely *described*
+     "SDWAN-LAN" on an access switch. Require vendor/overlay config evidence. */
+  if(/viptela|vedge|meraki\s+mx|fortigate.*sd-wan|set\s+system\s+sd-wan\s+site|sd-wan\s+controllers|forwarding-profiles|branch-sdwan/.test(s)) return "sdwan";
+  if(/\bssid\s|\bdot11\b|dot11radio|wireless\s+(ssid|controller)|capwap|aironet/.test(s)) return "ap";
+
+  const switchportCount = (s.match(/switchport/g)||[]).length;
+  let router = 0, sw = 0;
+  if(/\brouter\s+(bgp|ospf|eigrp|rip|isis)\b/.test(s)) router += 2;
+  if(/^\s*ip\s+route\s+/m.test(s))                     router += 2;   // static / default routes
+  if(/\bip\s+nat\b|nat\s+source|nat\s+inside|nat\s+outside/.test(s)) router += 3; // switches rarely NAT
+  if(/0\.0\.0\.0\s+0\.0\.0\.0|route\s+0\.0\.0\.0\/0/.test(s))         router += 2; // default route
+  if(/crypto\s+(map|ikev|isakmp)|tunnel\s+(source|destination|mode)/.test(s)) router += 1;
+
+  if(/spanning-tree/.test(s)) sw += 3;
+  if(/spanning-tree\s+mst|management\s+vlan\s+ip-address|voice\s+vlan\s+id|switchport\s+mode\s+trunk/.test(s)) sw += 2;
+  if(/\bvtp\s+(domain|mode)\b/.test(s)) sw += 2;
+  if(/^\s*vlan\s+\d/m.test(s)) sw += 1;                                // vlan database
+  sw += Math.min(switchportCount, 3);                                  // many access/trunk ports
+
+  if(router === 0 && sw === 0) return "unknown";
+  return router >= sw ? "router" : "switch";
+}
+/* ── Versa SD-WAN parser (`set ...` path syntax) ──────────────────────
+   Extracts identity, WAN circuits, LAN sub-interface gateways, VLANs,
+   SD-WAN controllers, and org/site facts. Strictly literal. */
+function parseVersaConfig(text, fileName, errors){
+  const dev = { interfaces: [], source: fileName, vendor: "Versa", type: "sdwan",
+                typeNote: "Versa SD-WAN (set-syntax)" };
+  const g = re => { const m = text.match(re); return m ? m[1].trim() : null; };
+
+  dev.hostname = g(/set\s+system\s+identification\s+name\s+(\S+)/i)
+             || g(/set\s+snmp\s+system\s+name\s+(\S+)/i)
+             || g(/site-name\s+(\S+)/i)
+             || fileName.replace(/\.[^.]+$/,"");
+  dev.id = dev.hostname;
+  dev.model = "Versa FlexVNF";
+  dev.serial = g(/set\s+system\s+sd-wan\s+site\s+chassis-id\s+(\S+)/i);
+  const siteId = g(/set\s+system\s+sd-wan\s+site\s+site-id\s+(\S+)/i);
+  const org    = g(/set\s+orgs\s+org\s+(\S+)\s+appliance-owner/i) || g(/provider-org\s+(\S+)/i);
+  const loc    = g(/set\s+system\s+identification\s+location\s+"([^"]+)"/i);
+  const siteType = g(/set\s+system\s+sd-wan\s+site\s+site-type\s+(\S+)/i);
+
+  /* WAN circuits: each `wan-interfaces <if> inet circuit-name <NAME>` */
+  const wanCircuits = [...text.matchAll(/set\s+system\s+sd-wan\s+site\s+wan-interfaces\s+(\S+)\s+inet\s+circuit-name\s+(\S+)/gi)]
+    .map(x=>({ iface:x[1], name:x[2] }));
+  /* which WAN ifaces use DHCP */
+  wanCircuits.forEach(c=>{
+    const base = c.iface.replace(/\.\d+$/,"");
+    const dhcp = new RegExp(`set\\s+interfaces\\s+${base.replace(/[/]/g,"\\/")}\\s+unit\\s+\\d+\\s+family\\s+inet\\s+dhcp`,"i").test(text);
+    c.dhcp = dhcp;
+    dev.interfaces.push({ name:c.iface, role:"WAN: "+c.name, ip: dhcp?"dhcp":"—", vlan:"", state:"up" });
+  });
+
+  /* LAN sub-interfaces: set interfaces <if> unit <u> family inet address <cidr> (+ description/vlan-id) */
+  const subs = {};
+  [...text.matchAll(/set\s+interfaces\s+(vni-\d+\/\d+)\s+unit\s+(\d+)\s+family\s+inet\s+address\s+(\d+\.\d+\.\d+\.\d+\/\d+)/gi)]
+    .forEach(x=>{ const k=x[1]+"."+x[2]; (subs[k]=subs[k]||{}).name=k; subs[k].ip=x[3]; });
+  [...text.matchAll(/set\s+interfaces\s+(vni-\d+\/\d+)\s+unit\s+(\d+)\s+description\s+(\S+)/gi)]
+    .forEach(x=>{ const k=x[1]+"."+x[2]; (subs[k]=subs[k]||{}).name=k; subs[k].role=x[3]; });
+  [...text.matchAll(/set\s+interfaces\s+(vni-\d+\/\d+)\s+unit\s+(\d+)\s+vlan-id\s+(\d+)/gi)]
+    .forEach(x=>{ const k=x[1]+"."+x[2]; (subs[k]=subs[k]||{}).name=k; subs[k].vlanId=x[3]; });
+  const lanSubs = Object.values(subs).filter(s=>s.ip);
+  lanSubs.forEach(s=>dev.interfaces.push({
+    name:s.name, role:(s.role||"LAN")+(s.vlanId?" (vlan "+s.vlanId+")":""), ip:s.ip, vlan:s.vlanId?"vlan "+s.vlanId:"", state:"up" }));
+
+  /* VLAN list from the LAN sub-interfaces */
+  const vlans = [...new Set(lanSubs.map(s=>s.vlanId).filter(Boolean))].sort((a,b)=>a-b);
+
+  /* LAN gateway = lowest-numbered / smallest-host LAN address is the mgmt gw;
+     we surface every LAN subnet so gateway-chain linking works for each. */
+  dev.lanGateways = lanSubs.map(s=>({ ip:s.ip.split("/")[0], cidr:s.ip, name:s.name, role:s.role }));
+
+  /* WAN block (for the derived-internet logic + WAN overview) */
+  dev.wan = { circuits: wanCircuits.map(c=>c.name).join(", ") || undefined,
+              ip: wanCircuits.some(c=>c.dhcp) ? "dhcp (× "+wanCircuits.length+")" : undefined,
+              gateway: "internet", notes: wanCircuits.map(c=>c.iface+"="+c.name+(c.dhcp?" dhcp":"")).join(" · ") };
+
+  /* NAT / CGNAT public address */
+  const natPub = g(/cgnat\s+pools\s+LAN-POOL\s+address\s+\[\s*(\d+\.\d+\.\d+\.\d+)\/\d+/i);
+
+  /* SD-WAN controllers (control-plane peers) */
+  const controllers = [...new Set([...text.matchAll(/sd-wan\s+controllers\s+([A-Z0-9\-]+)\s+site-name/gi)].map(x=>x[1]))];
+
+  /* mgmt IP: prefer the VOICE/mgmt LAN subnet's gateway (host .1) if present */
+  const mgmtSub = lanSubs.find(s=>/voice|mgmt|20\b/i.test((s.role||"")+" "+(s.vlanId||"")))
+              || lanSubs[0];
+  if(mgmtSub) dev.mgmtIp = mgmtSub.ip.split("/")[0];
+
+  dev.lan = {};
+  if(vlans.length) dev.lan.vlan = "VLANs " + vlans.join(", ");
+  dev.routing = {};
+  const bgpAs = g(/protocols\s+bgp\s+(\d+)\s+local-as/i);
+  if(bgpAs) dev.routing.asn = bgpAs;
+  dev.routing.protocols = "SD-WAN overlay (BGP/IPsec)";
+
+  dev.switching = null;
+
+  /* facts panel */
+  dev.versa = {
+    org, siteId, siteType, chassis: dev.serial, location: loc,
+    natPublic: natPub, controllers, circuits: wanCircuits.map(c=>c.name),
+    lanSubnets: lanSubs.map(s=>({ subnet:s.ip, role:s.role, vlan:s.vlanId }))
+  };
+
+  dev.id = dev.hostname;
+  return dev;
+}
+
+function parseTextConfig(text, fileName, errors){
+  /* Versa Flexware / SD-WAN uses `set ...` path syntax — handled by a
+     dedicated parser (completely different from IOS-style configs). */
+  if(/^set\s+(system|interfaces|orgs)\s/mi.test(text) && /versa|vni-0\/|sd-wan\s+site|confdConfig/i.test(text)){
+    return parseVersaConfig(text, fileName, errors);
+  }
+  const lines = text.split(/\r?\n/);
+  const dev = { interfaces: [], source: fileName };
+  const lower = text.toLowerCase();
+
+  /* directive comments: ! topo-id: x / # topo-type: x / ! topo-uplink: x */
+  const directives = {};
+  for(const ln of lines){
+    const m = ln.match(/^[!#]\s*topo-(id|type|uplink)\s*:\s*(\S+)/i);
+    if(m) directives[m[1].toLowerCase()] = m[2];
+  }
+
+  /* hostname — Cisco / FortiOS / Juniper styles */
+  let m = text.match(/^hostname\s+(\S+)/mi)
+       || text.match(/set\s+hostname\s+"?([^"\r\n]+)"?/i)
+       || text.match(/set\s+system\s+host-name\s+(\S+)/i);
+  if(m) dev.hostname = m[1].trim().replace(/^"|"$/g,"");
+
+  /* firmware / version */
+  m = text.match(/^version\s+(\S+)/mi);            if(m) dev.firmware = m[1];
+  m = text.match(/#config-version\s*=\s*(\S+)/i);  if(m) dev.firmware = m[1];
+  m = text.match(/Cisco IOS(?:-XE)? Software.*Version\s+([^\s,]+)/i); if(m) dev.firmware = m[1];
+
+  /* vendor / model / serial / uptime — from show version-style output if pasted */
+  if(/cisco/i.test(text)) dev.vendor = "Cisco";
+  else if(/fortinet|fortigate|fortios/i.test(text)) dev.vendor = "Fortinet";
+  else if(/juniper|junos/i.test(text)) dev.vendor = "Juniper";
+  else if(/arista|\beos\b/i.test(text)) dev.vendor = "Arista";
+  else if(/ubiquiti|unifi/i.test(text)) dev.vendor = "Ubiquiti";
+  m = text.match(/^\s*Model [Nn]umber\s*:\s*(\S+)/mi)
+   || text.match(/cisco\s+(\S+)\s+\(.*\)\s+processor/i);              if(m) dev.model = m[1];
+  m = text.match(/System [Ss]erial [Nn]umber\s*:\s*(\S+)/i)
+   || text.match(/Processor board ID\s+(\S+)/i);                       if(m) dev.serial = m[1];
+  m = text.match(/uptime is\s+(.+)/i);                                 if(m) dev.uptime = m[1].trim();
+
+  /* default gateway (WAN side) */
+  let gw = null;
+  m = text.match(/^ip\s+route\s+0\.0\.0\.0\s+0\.0\.0\.0\s+(\d+\.\d+\.\d+\.\d+)/mi); if(m) gw = m[1];
+  m = text.match(/^ip\s+default-gateway\s+(\d+\.\d+\.\d+\.\d+)/mi);                 if(m) gw = m[1];
+  /* Cisco Small Business / CBD: management vlan ip-address <ip> mask <mask> */
+  let cbdMgmt = text.match(/^management\s+vlan\s+ip-address\s+(\d+\.\d+\.\d+\.\d+)\s+mask\s+(\d+\.\d+\.\d+\.\d+)/mi);
+
+  /* interface blocks (IOS-style: block ends at next non-indented line) */
+  let cur = null;
+  for(const raw of lines){
+    const line = raw.replace(/\s+$/,"");
+    const im = line.match(/^interface\s+(\S+)/i);
+    if(im){ cur = {name: im[1], role:"", ip:"—", vlan:"", state:"up"}; dev.interfaces.push(cur); continue; }
+    if(line && !/^\s/.test(line)){ cur = null; }
+    if(!cur) continue;
+    let mm;
+    if(mm = line.match(/^\s+description\s+(.+)/i)) cur.role = mm[1].trim();
+    else if(mm = line.match(/^\s+ip\s+address\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)(\s+secondary)?/i)){
+      const c = maskToCidr(mm[2]); const ip = mm[1] + (c!==null ? "/"+c : "");
+      cur.ip = (mm[3] && cur.ip && cur.ip!=="—") ? cur.ip + ", " + ip + " (sec)" : ip;
+    }
+    else if(mm = line.match(/^\s+ip\s+address\s+(\d+\.\d+\.\d+\.\d+\/\d+)/i)) cur.ip = mm[1];
+    else if(/^\s+ip\s+address\s+dhcp/i.test(line)) cur.ip = "dhcp";
+    else if(mm = line.match(/^\s+ip\s+unnumbered\s+(\S+)/i)) cur.ip = "unnumbered → " + mm[1];
+    else if(mm = line.match(/^\s+(?:set\s+)?(?:address|ip)\s+(\d+\.\d+\.\d+\.\d+\/\d+)/i)) cur.ip = mm[1];
+    else if(mm = line.match(/^\s+switchport\s+trunk\s+allowed\s+vlan\s+(?:add\s+)?(\S+)/i)) cur.vlan = "trunk " + mm[1];
+    else if(mm = line.match(/^\s+switchport\s+access\s+vlan\s+(\S+)/i)) cur.vlan = "access " + mm[1];
+    else if(/^\s+switchport\s+mode\s+trunk/i.test(line) && !cur.vlan) cur.vlan = "trunk";
+    else if(mm = line.match(/^\s+speed\s+(\S+)/i)) cur.speed = mm[1];
+    else if(mm = line.match(/^\s+duplex\s+(\S+)/i)) cur.duplex = mm[1];
+    else if(/^\s+shutdown\s*$/i.test(line)) cur.state = "admin down";
+  }
+
+  /* WAN side — only interfaces literally labeled as WAN-facing */
+  const wanIf = dev.interfaces.find(i => /wan|outside|internet/i.test(i.name + " " + i.role));
+  if(wanIf || gw){
+    dev.wan = {};
+    if(wanIf && wanIf.ip !== "—") dev.wan.ip = wanIf.ip;
+    if(gw) dev.wan.gateway = gw;
+  }
+
+  /* LAN side — mgmt/VLAN interface IP, declared VLANs, SSIDs */
+  const mgmtIf = dev.interfaces.find(i => /vlan|mgmt|management/i.test(i.name) && i.ip !== "—");
+  if(mgmtIf) dev.mgmtIp = mgmtIf.ip.split("/")[0];
+  if(!dev.mgmtIp && cbdMgmt){                         // Cisco CBD management VLAN IP
+    const c = maskToCidr(cbdMgmt[2]);
+    dev.mgmtIp = cbdMgmt[1];
+    dev._cbdMgmtCidr = cbdMgmt[1] + (c!==null?"/"+c:"");
+  }
+  const vlanDecls = [...text.matchAll(/^vlan\s+(\d[\d,\-]*)\s*$/gim)].map(x=>x[1]);
+  const ssids = [...text.matchAll(/\bssid\s+"?([^"\r\n]+)"?/gi)].map(x=>x[1].trim());
+  if(mgmtIf || vlanDecls.length || ssids.length){
+    dev.lan = {};
+    if(mgmtIf) dev.lan.ip = mgmtIf.ip;
+    if(vlanDecls.length) dev.lan.vlan = "declared: " + [...new Set(vlanDecls)].join(", ");
+    if(ssids.length) dev.lan.ssid = [...new Set(ssids)].join(" · ");
+  }
+
+  /* ROUTER standard fields (L3) — literal from config */
+  const routing = {};
+  m = text.match(/router-id\s+(\d+\.\d+\.\d+\.\d+)/i);      if(m) routing.routerId = m[1];
+  const protos = [];
+  let pm;
+  if(pm = text.match(/^router\s+ospf\s+(\d+)/mi)) protos.push("OSPF proc "+pm[1]);
+  if(pm = text.match(/^router\s+bgp\s+(\d+)/mi)){ protos.push("BGP AS "+pm[1]); routing.asn = pm[1]; }
+  if(pm = text.match(/^router\s+eigrp\s+(\S+)/mi)) protos.push("EIGRP "+pm[1]);
+  if(/^router\s+rip/mi.test(text)) protos.push("RIP");
+  if([...text.matchAll(/^ip\s+route\s+\S+/gmi)].length) protos.push("static");
+  if(protos.length) routing.protocols = protos.join(", ");
+  if(gw) routing.defaultRoute = "0.0.0.0/0 → " + gw;
+  /* HSRP / VRRP redundancy */
+  m = text.match(/standby\s+(\d+)\s+ip\s+(\d+\.\d+\.\d+\.\d+)/i);
+  if(m) routing.ha = "HSRP grp "+m[1]+" VIP "+m[2];
+  m = text.match(/vrrp\s+(\d+)\s+ip\s+(\d+\.\d+\.\d+\.\d+)/i);
+  if(m) routing.ha = "VRRP grp "+m[1]+" VIP "+m[2];
+  if(Object.keys(routing).length) dev.routing = routing;
+
+  /* SWITCH standard fields (L2) — literal from config */
+  const sw = {};
+  if(vlanDecls.length) sw.vlans = [...new Set(vlanDecls)].join(", ");
+  m = text.match(/spanning-tree\s+mode\s+(\S+)/i);          if(m) sw.stpMode = m[1];
+  m = text.match(/spanning-tree\s+vlan\s+[\d,\-]+\s+priority\s+(\d+)/i);
+  if(m) sw.stpPriority = m[1];
+  m = text.match(/vtp\s+domain\s+(\S+)/i);                  if(m) sw.vtpDomain = m[1];
+  m = text.match(/vtp\s+mode\s+(\S+)/i);                    if(m) sw.vtpMode = m[1];
+  const pos = [...new Set([...text.matchAll(/channel-group\s+(\d+)/gi)].map(x=>"Po"+x[1]))];
+  if(pos.length) sw.etherchannel = pos.join(", ");
+  m = text.match(/switch\s+(\d+)\s+provision/i);            if(m) sw.stack = "stack member(s) provisioned";
+  if(Object.keys(sw).length) dev.switching = sw;
+
+  /* CDP / LLDP neighbors — the industry-standard physical link source.
+     Parses pasted `show cdp neighbors detail` / `show lldp neighbors detail`. */
+  const neighbors = [];
+  /* CDP detail blocks */
+  const cdpBlocks = text.split(/-{5,}/);
+  cdpBlocks.forEach(b=>{
+    const dm = b.match(/Device ID:\s*(\S+)/i);
+    const im2 = b.match(/Interface:\s*([^,\r\n]+),\s*Port ID \(outgoing port\):\s*(\S+)/i);
+    if(dm && im2) neighbors.push({localIf:im2[1].trim(), remoteHost:dm[1].trim(), remoteIf:im2[2].trim(), via:"CDP"});
+  });
+  /* LLDP detail blocks */
+  [...text.matchAll(/Local Intf:\s*(\S+)[\s\S]*?System Name:\s*(\S+)[\s\S]*?Port id:\s*(\S+)/gi)]
+    .forEach(x=>neighbors.push({localIf:x[1], remoteHost:x[2], remoteIf:x[3], via:"LLDP"}));
+  if(neighbors.length) dev.neighbors = neighbors;
+
+  /* type — directive is authoritative; otherwise heuristic, flagged */
+  if(directives.type){
+    if(!TYPE[directives.type.toLowerCase()]){
+      errors.push(`${fileName}: topo-type "${directives.type}" is not a known type — skipped`);
+      return null;
+    }
+    dev.type = directives.type.toLowerCase();
+    dev.typeNote = "declared (topo-type)";
+  } else {
+    dev.type = detectTypeHeuristic(lower);
+    dev.typeNote = dev.type === "unknown" ? "undetermined" : "heuristic — add ! topo-type: to confirm";
+    errors.push(`${fileName}: type ${dev.type==="unknown"?"undetermined":`detected as "${dev.type}" by heuristic`} (add "! topo-type:" to declare it)`);
+  }
+
+  /* identity fallbacks */
+  if(!dev.hostname){
+    dev.hostname = fileName.replace(/\.[^.]+$/,"");
+    errors.push(`${fileName}: no hostname found in config — using filename`);
+  }
+  dev.id = directives.id || dev.hostname;
+
+  /* uplink — ONLY from directive, never inferred */
+  if(directives.uplink) dev.uplink = directives.uplink;
+
+  return dev;
+}
+
+/* ── Upload handling (JSON + text configs) ─ */
+const TEXT_EXT = /\.(txt|cfg|conf|config|log|ios|run)$/i;
+async function handleFiles(fileList){
+  const files = [...fileList];
+  const skipped = files.filter(f => !/\.json$/i.test(f.name) && !TEXT_EXT.test(f.name));
+  const usable  = files.filter(f =>  /\.json$/i.test(f.name) ||  TEXT_EXT.test(f.name));
+  if(!usable.length){
+    setStatus("No supported files in selection (.json, .txt, .cfg, .conf, .config, .log, .ios, .run).", true);
+    return;
+  }
+  const errors = [];
+  skipped.forEach(f => errors.push(`${f.name}: unsupported extension — skipped`));
+  const incoming = new Map();
+  for(const f of usable){
+    let content;
+    try{ content = await f.text(); }
+    catch(e){ errors.push(`${f.name}: could not read — ${e.message}`); continue; }
+    const trimmed = content.trim();
+    const looksJson = /\.json$/i.test(f.name) || trimmed.startsWith("{") || trimmed.startsWith("[");
+    if(looksJson){
+      try{ validateAndMerge(JSON.parse(content), f.name, errors, incoming); }
+      catch(e){ errors.push(`${f.name}: invalid JSON — ${e.message}`); }
+    } else {
+      const d = parseTextConfig(content, f.name, errors);
+      if(d){
+        if(incoming.has(d.id)) errors.push(`${f.name}: duplicate id "${esc(d.id)}" — later entry replaced earlier`);
+        incoming.set(d.id, d);
+      }
+    }
+  }
+  if(!incoming.size){
+    setStatus("Nothing loaded.\n" + errors.join("\n"), true);
+    return;
+  }
+  suppressDerived = false;
+  devices = [...incoming.values()];   // topology = uploaded data, nothing else
+  render();
+  const orphans = devices.filter(d=>d.uplink && !byId[d.uplink]).length;
+  let msg = `Loaded ${devices.length} device${devices.length===1?"":"s"} from ${usable.length} file${usable.length===1?"":"s"}.`;
+  if(evidencePromotions.length) msg += `\n${evidencePromotions.length} link(s) established from config evidence:\n` + evidencePromotions.join("\n");
+  if(linkFixNotes.length) msg += "\n" + linkFixNotes.join("\n");
+  if(inferredLinks.length) msg += ` ${inferredLinks.length} link(s) inferred from config evidence (dotted — click a device to see why).`;
+  if(orphans) msg += ` ${orphans} device(s) reference an uplink not present in the data (shown dashed ⚠).`;
+  if(errors.length) msg += "\n" + errors.join("\n");
+  setStatus(msg, errors.length>0);
+}
+
+$("uploadBtn").onclick = ()=>$("fileInput").click();
+$("fileInput").addEventListener("change",e=>{ handleFiles(e.target.files); e.target.value=""; });
+
+["dragenter","dragover"].forEach(ev=>document.addEventListener(ev,e=>{
+  e.preventDefault(); document.body.classList.add("dragging");
+}));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{
+  e.preventDefault(); if(ev==="drop"||e.target===document.body) document.body.classList.remove("dragging");
+}));
+document.addEventListener("drop",e=>{
+  document.body.classList.remove("dragging");
+  if(e.dataTransfer && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+
+$("clearBtn").onclick = ()=>{ suppressDerived=false; devices=[]; render(); setStatus(""); $("search").value=""; applySearch(); };
+
+$("inferBtn").onclick = ()=>{
+  showInferred = !showInferred;
+  $("inferBtn").textContent = "Inferred links: " + (showInferred ? "ON" : "OFF");
+  render();
+};
+$("advBtn").onclick = ()=>{
+  advancedMode = !advancedMode;
+  const b = $("advBtn");
+  b.textContent = "Advanced: " + (advancedMode ? "ON" : "OFF");
+  b.classList.toggle("primary", advancedMode);
+  render();
+};
+{
+  const ss = $("spacingSel");
+  if(ss) ss.onchange = ()=>{ spacingMode = ss.value; render(); };
+}
+{
+  const tog = $("statusToggle");
+  if(tog) tog.onclick = ()=>{
+    statusDetailsOpen = !statusDetailsOpen;
+    const det = $("status"), isErr = $("statusBar").classList.contains("err");
+    det.className = statusDetailsOpen ? ("show"+(isErr?" err":"")) : "";
+    tog.textContent = statusDetailsOpen ? "Hide details" : "Show details";
+  };
+}
+
+/* ── WAN side overview ───────────────────── */
+let showWan = false;
+function buildWanPanel(){
+  const wp = $("wanPanel");
+  if(!showWan){ wp.classList.remove("show"); return; }
+  const rows = devices.filter(d => d.wan && (d.wan.ip || d.wan.gateway || d.wan.circuit || d.wan.overlay || d.wan.nat));
+  if(!rows.length){
+    wp.innerHTML = `<h3>WAN Side</h3><div style="font-size:12px;color:var(--muted)">No WAN-side data in the loaded files (wan ip / gateway / circuit / overlay / NAT).</div>`;
+    wp.classList.add("show");
+    return;
+  }
+  wp.innerHTML = `<h3>WAN Side — edge of each device (from loaded data)</h3>
+    <table class="wan">
+      <tr><th>Device</th><th>WAN IP</th><th>Gateway</th><th>Circuit</th><th>NAT / Overlay</th></tr>
+      ${rows.map(d=>{
+        const t = TYPE[d.type];
+        return `<tr class="row" data-goto="${esc(d.id)}">
+          <td><span class="dot" style="background:var(${t.cssVar})"></span>${esc(d.hostname)}</td>
+          <td>${esc(d.wan.ip||"—")}</td>
+          <td>${esc(d.wan.gateway||"—")}</td>
+          <td class="dim">${esc(d.wan.circuit||"—")}</td>
+          <td class="dim">${esc(d.wan.nat||d.wan.overlay||"—")}</td></tr>`;
+      }).join("")}
+    </table>`;
+  wp.classList.add("show");
+  wp.querySelectorAll("tr.row").forEach(r=>{
+    r.onclick = ()=>select(r.dataset.goto);
+  });
+}
+$("wanBtn").onclick = ()=>{
+  showWan = !showWan;
+  $("wanBtn").textContent = showWan ? "☁ WAN side ✕" : "☁ WAN side";
+  buildWanPanel();
+};
+
+$("exportBtn").onclick = ()=>{
+  if(!devices.length){ setStatus("Nothing to export — load data first.", true); return; }
+  const blob = new Blob([JSON.stringify({devices}, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "topology.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus(`Exported ${devices.length} devices (including any manual uplinks) to topology.json.`);
+};
+
+/* ── Vector PDF export ───────────────────────
+   Serializes the live SVG (already vector) with the theme's CSS variables
+   resolved to concrete colors, wraps it in a minimal print document sized to
+   the diagram, and opens the browser's Save-as-PDF. The result stays crisp at
+   any zoom because the topology is embedded as vector paths, not a raster. */
+function exportVectorPDF(){
+  if(!devices.length){ setStatus("Nothing to export — load data first.", true); return; }
+  const svg = $("topo");
+  const vb = (svg.getAttribute("viewBox")||"0 0 1000 700").split(/\s+/).map(Number);
+  const w = vb[2]||svg.clientWidth||1000, h = vb[3]||svg.clientHeight||700;
+
+  /* resolve CSS custom properties to hex so the standalone SVG renders identically */
+  const cs = getComputedStyle(document.body);
+  const varNames = ["--c-internet","--c-router","--c-sdwan","--c-switch","--c-ap",
+    "--c-endpoint","--c-unknown","--brand","--panel","--panel-edge","--ink",
+    "--muted","--faint","--bg","--hl","--link-inf","--mono","--sans","--head-grad"];
+  let clone = svg.cloneNode(true);
+  let markup = new XMLSerializer().serializeToString(clone);
+  varNames.forEach(v=>{
+    const val = cs.getPropertyValue(v).trim() || "#888";
+    markup = markup.split(`var(${v})`).join(val);
+  });
+  const bg = cs.getPropertyValue("--bg").trim() || "#0f1b30";
+  if(!/xmlns=/.test(markup)) markup = markup.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+
+  /* landscape or portrait to best fit the aspect ratio */
+  const orient = w >= h ? "landscape" : "portrait";
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Network Topology</title>
+    <style>
+      @page { size: ${orient}; margin: 12mm; }
+      html,body { margin:0; padding:0; background:${bg}; }
+      .wrap { width:100%; }
+      svg { width:100%; height:auto; display:block; }
+      @media print { body { background:${bg}; -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+    </style></head>
+    <body><div class="wrap">${markup}</div>
+    <script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script>
+    </body></html>`;
+
+  const win = window.open("", "_blank");
+  if(!win){ setStatus("PDF export was blocked by the browser's popup blocker. Allow popups for this page and try again.", true); return; }
+  win.document.open(); win.document.write(doc); win.document.close();
+  setStatus("Opened the vector PDF view. Choose \"Save as PDF\" as the destination in the print dialog to keep full image quality.");
+}
+$("pdfBtn").onclick = exportVectorPDF;
+
+/* ── Theme toggle ────────────────────────── */
+const themeBtn = $("themeBtn");
+function setTheme(t){
+  document.body.dataset.theme = t;
+  themeBtn.textContent = t==="dark" ? "☀" : "☾";
+}
+themeBtn.onclick = ()=>setTheme(document.body.dataset.theme==="dark"?"light":"dark");
+setTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+
+/* ── Sample data (loaded ONLY on explicit request) ─ */
+const SAMPLE = [
+  {id:"inet",hostname:"INTERNET",type:"internet",model:"Provider Cloud",
+   wan:{circuit:"ISP-A Fiber 500/500 + LTE backup",notes:"Dual transport"}},
+  {id:"rtr1",hostname:"EDGE-RTR-01",type:"router",model:"ISR 1121-8P",vendor:"Cisco",
+   serial:"FCW2450A1BC",uptime:"32 weeks, 4 days",
+   mgmtIp:"10.10.0.1",mac:"00:1A:2B:3C:00:01",firmware:"IOS-XE 17.9.4a",uplink:"inet",
+   wan:{ip:"203.0.113.10/30",gateway:"203.0.113.9",circuit:"ISP-A CKT-88231",nat:"PAT overload Gi0/0/0"},
+   lan:{ip:"10.10.0.1/24",vlan:"VLAN 10 (Transit)",dhcp:"relay → 10.10.20.5"},
+   routing:{routerId:"10.10.0.1",asn:"65010",protocols:"BGP AS 65010, OSPF proc 1, static",
+     defaultRoute:"0.0.0.0/0 → 203.0.113.9",ha:"HSRP grp 1 VIP 10.10.0.254"},
+   neighbors:[{localIf:"Gi0/0/1",remoteHost:"SDWAN-EDGE-01",remoteIf:"wan1",via:"CDP"}],
+   interfaces:[
+     {name:"Gi0/0/0",role:"WAN uplink",ip:"203.0.113.10/30",vlan:"—",speed:"1G",duplex:"full",state:"up"},
+     {name:"Gi0/0/1",role:"LAN → SD-WAN",ip:"10.10.0.1/24",vlan:"10",speed:"1G",duplex:"full",state:"up"},
+     {name:"Cell0/1/0",role:"LTE backup",ip:"dhcp",vlan:"—",state:"standby"}]},
+  {id:"sdw1",hostname:"SDWAN-EDGE-01",type:"sdwan",model:"Fortinet FGT-60F",
+   mgmtIp:"10.10.0.2",mac:"00:1A:2B:3C:00:02",firmware:"FortiOS 7.2.8",uplink:"rtr1",
+   wan:{ip:"10.10.0.2/24",gateway:"10.10.0.1",overlay:"IPsec overlay → HQ hub (2 tunnels)",sla:"SLA: voice 30ms / data 80ms"},
+   lan:{ip:"10.10.20.1/24",vlan:"VLAN 20 (Corp), 30 (Voice), 40 (Guest)",dhcp:"scopes 20/30/40 local"},
+   interfaces:[
+     {name:"wan1",role:"Underlay → EDGE-RTR-01",ip:"10.10.0.2/24",vlan:"10",state:"up"},
+     {name:"internal1",role:"Trunk → CORE-SW-01",ip:"10.10.20.1/24",vlan:"20,30,40",state:"up"},
+     {name:"ipsec.hq1",role:"Overlay tunnel A",ip:"172.16.1.2/30",vlan:"—",state:"up"},
+     {name:"ipsec.hq2",role:"Overlay tunnel B",ip:"172.16.2.2/30",vlan:"—",state:"up"}]},
+  {id:"sw1",hostname:"CORE-SW-01",type:"switch",model:"C1300-24P",vendor:"Cisco",
+   serial:"FOC2530X1YZ",uptime:"45 weeks, 2 days",
+   mgmtIp:"10.10.20.5",mac:"00:1A:2B:3C:00:10",firmware:"1.3.1.15",uplink:"sdw1",
+   lan:{ip:"10.10.20.5/24",vlan:"Mgmt VLAN 20"},
+   switching:{vlans:"20, 30, 40",stpMode:"rapid-pvst",stpRoot:"root (VLAN 20,30,40)",
+     stpPriority:"4096",vtpDomain:"ACME",vtpMode:"server",etherchannel:"Po1 → ACC-SW-01",
+     poe:"195W budget / 92W used"},
+   neighbors:[
+     {localIf:"Gi1/0/1",remoteHost:"SDWAN-EDGE-01",remoteIf:"internal1",via:"LLDP"},
+     {localIf:"Gi1/0/10",remoteHost:"STORE-AP-01",remoteIf:"eth0",via:"CDP"},
+     {localIf:"Gi1/0/11",remoteHost:"STORE-AP-02",remoteIf:"eth0",via:"CDP"}],
+   interfaces:[
+     {name:"Gi1/0/1",role:"Uplink → SDWAN-EDGE-01",ip:"—",vlan:"trunk 20,30,40",speed:"1G",duplex:"full",state:"up"},
+     {name:"Gi1/0/2",role:"Downlink → ACC-SW-01",ip:"—",vlan:"trunk 20,30,40",speed:"1G",duplex:"full",state:"up"},
+     {name:"Gi1/0/10",role:"AP → STORE-AP-01",ip:"—",vlan:"trunk 20,40",state:"up (PoE 12.9W)"},
+     {name:"Gi1/0/11",role:"AP → STORE-AP-02",ip:"—",vlan:"trunk 20,40",state:"up (PoE 12.4W)"}]},
+  {id:"sw2",hostname:"ACC-SW-01",type:"switch",model:"C1300-8P",vendor:"Cisco",
+   serial:"FOC2530X2AB",uptime:"45 weeks, 2 days",
+   mgmtIp:"10.10.20.6",mac:"00:1A:2B:3C:00:11",firmware:"1.3.1.15",uplink:"sw1",
+   lan:{ip:"10.10.20.6/24",vlan:"Mgmt VLAN 20"},
+   switching:{vlans:"20, 30, 40",stpMode:"rapid-pvst",stpRoot:"non-root",stpPriority:"8192",
+     vtpDomain:"ACME",vtpMode:"client",poe:"67W budget / 13W used"},
+   neighbors:[
+     {localIf:"Gi1/0/1",remoteHost:"CORE-SW-01",remoteIf:"Gi1/0/2",via:"LLDP"},
+     {localIf:"Gi1/0/5",remoteHost:"BACK-AP-01",remoteIf:"eth0",via:"CDP"}],
+   interfaces:[
+     {name:"Gi1/0/1",role:"Uplink → CORE-SW-01",ip:"—",vlan:"trunk 20,30,40",speed:"1G",duplex:"full",state:"up"},
+     {name:"Gi1/0/5",role:"AP → BACK-AP-01",ip:"—",vlan:"trunk 20,40",state:"up (PoE 12.7W)"},
+     {name:"Gi1/0/6",role:"Voice ATA",ip:"—",vlan:"access 30",state:"up"}]},
+  {id:"ap1",hostname:"STORE-AP-01",type:"ap",model:"UniFi U6-Pro",
+   mgmtIp:"10.10.20.31",mac:"00:1A:2B:3C:00:21",firmware:"6.6.65",uplink:"sw1",
+   lan:{ip:"10.10.20.31/24 (DHCP-res)",ssid:"CORP-WIFI (VLAN 20) · GUEST (VLAN 40)",radio:"2.4GHz ch1 / 5GHz ch44 (80MHz)"},
+   interfaces:[
+     {name:"eth0",role:"Uplink → CORE-SW-01 Gi1/0/10",ip:"10.10.20.31",vlan:"trunk 20,40",state:"up"},
+     {name:"wifi0",role:"2.4 GHz radio",ip:"—",vlan:"20,40",state:"up · 14 clients"},
+     {name:"wifi1",role:"5 GHz radio",ip:"—",vlan:"20,40",state:"up · 22 clients"}]},
+  {id:"ap2",hostname:"STORE-AP-02",type:"ap",model:"UniFi U6-Pro",
+   mgmtIp:"10.10.20.32",mac:"00:1A:2B:3C:00:22",firmware:"6.6.65",uplink:"sw1",
+   lan:{ip:"10.10.20.32/24 (DHCP-res)",ssid:"CORP-WIFI (VLAN 20) · GUEST (VLAN 40)",radio:"2.4GHz ch6 / 5GHz ch149 (80MHz)"},
+   interfaces:[
+     {name:"eth0",role:"Uplink → CORE-SW-01 Gi1/0/11",ip:"10.10.20.32",vlan:"trunk 20,40",state:"up"},
+     {name:"wifi0",role:"2.4 GHz radio",ip:"—",vlan:"20,40",state:"up · 9 clients"},
+     {name:"wifi1",role:"5 GHz radio",ip:"—",vlan:"20,40",state:"up · 17 clients"}]},
+  {id:"ap3",hostname:"BACK-AP-01",type:"ap",model:"UniFi U6-Lite",
+   mgmtIp:"10.10.20.33",mac:"00:1A:2B:3C:00:23",firmware:"6.6.65",uplink:"sw2",
+   lan:{ip:"10.10.20.33/24 (DHCP-res)",ssid:"CORP-WIFI (VLAN 20)",radio:"2.4GHz ch11 / 5GHz ch36 (40MHz)"},
+   interfaces:[
+     {name:"eth0",role:"Uplink → ACC-SW-01 Gi1/0/5",ip:"10.10.20.33",vlan:"trunk 20,40",state:"up"},
+     {name:"wifi0",role:"2.4 GHz radio",ip:"—",vlan:"20",state:"up · 4 clients"},
+     {name:"wifi1",role:"5 GHz radio",ip:"—",vlan:"20",state:"up · 6 clients"}]},
+  {id:"pc1",hostname:"FRONT-POS-01",type:"endpoint",model:"POS Workstation",
+   mgmtIp:"10.10.20.101",mac:"00:1A:2B:3C:00:51",uplink:"sw2",
+   lan:{vlan:"access 20"}},
+  {id:"ph1",hostname:"DESK-PHONE-01",type:"endpoint",model:"VoIP Phone",
+   mgmtIp:"10.10.30.21",mac:"00:1A:2B:3C:00:52",uplink:"sw2",
+   lan:{vlan:"access 30 (voice)"}}
+];
+/* ── STANDARD SITE TEMPLATE (for future builds) ──────────────────
+   Pattern borrowed from GNS3 multi-site labs: one site number {N}
+   drives everything — hostnames sN-*, WAN transit 100.127.N.0/30,
+   LAN 10.N.x.0/24. Hierarchy: cloud → router → SD-WAN → switch →
+   APs / endpoints. Stamp a site, adjust device counts, export.     */
+const SITE_TEMPLATE = [
+  {id:"s{N}-cloud", hostname:"S{N}-WAN", type:"internet", model:"ISP / Cloud",
+   wan:{circuit:"<circuit id>", notes:"Site {N} transport"}},
+  {id:"s{N}-r1", hostname:"S{N}-R1", type:"router", model:"<router model>",
+   uplink:"s{N}-cloud", mgmtIp:"10.{N}.0.1",
+   wan:{ip:"100.127.{N}.2/30", gateway:"100.127.{N}.1", circuit:"<circuit id>", nat:"source NAT 10.{N}.0.0/16 → masquerade"},
+   lan:{ip:"10.{N}.0.1/24", vlan:"VLAN 10 (transit)"},
+   routing:{defaultRoute:"0.0.0.0/0 → 100.127.{N}.1", protocols:"static"},
+   interfaces:[
+     {name:"eth0", role:"uplink isp{N}", ip:"100.127.{N}.2/30", vlan:"—", state:"up"},
+     {name:"eth1", role:"LAN → SD-WAN / switch", ip:"10.{N}.0.1/24", vlan:"10", state:"up"}]},
+  {id:"s{N}-sdw1", hostname:"S{N}-SDW1", type:"sdwan", model:"<sdwan model>",
+   uplink:"s{N}-r1", mgmtIp:"10.{N}.0.2",
+   wan:{ip:"10.{N}.0.2/24", gateway:"10.{N}.0.1", overlay:"tunnels → hub"},
+   lan:{ip:"10.{N}.20.1/24", vlan:"VLAN 20 (corp), 30 (voice), 40 (guest)"},
+   interfaces:[
+     {name:"wan1", role:"underlay → S{N}-R1", ip:"10.{N}.0.2/24", vlan:"10", state:"up"},
+     {name:"lan1", role:"trunk → S{N}-SW1", ip:"10.{N}.20.1/24", vlan:"20,30,40", state:"up"}]},
+  {id:"s{N}-sw1", hostname:"S{N}-SW1", type:"switch", model:"<switch model>",
+   uplink:"s{N}-sdw1", mgmtIp:"10.{N}.20.5",
+   lan:{ip:"10.{N}.20.5/24", vlan:"mgmt VLAN 20"},
+   switching:{vlans:"20, 30, 40", stpMode:"rapid-pvst", stpPriority:"4096"},
+   interfaces:[
+     {name:"Gi1/0/1", role:"uplink → S{N}-SDW1", ip:"—", vlan:"trunk 20,30,40", state:"up"},
+     {name:"Gi1/0/10", role:"AP port", ip:"—", vlan:"trunk 20,40", state:"up"}]},
+  {id:"s{N}-ap1", hostname:"S{N}-AP1", type:"ap", model:"<ap model>",
+   uplink:"s{N}-sw1", mgmtIp:"10.{N}.20.31",
+   lan:{ssid:"CORP (VLAN 20) · GUEST (VLAN 40)"}},
+  {id:"s{N}-pc1", hostname:"S{N}-PC1", type:"endpoint", model:"<workstation>",
+   uplink:"s{N}-sw1", lan:{vlan:"access 20"}},
+  {id:"s{N}-ph1", hostname:"S{N}-PHONE1", type:"endpoint", model:"<voip phone>",
+   uplink:"s{N}-sw1", lan:{vlan:"access 30 (voice)"}}
+];
+
+$("newSiteBtn").onclick = ()=>{
+  const n = prompt("Site number for the new site (drives hostnames sN-*, transit 100.127.N.0/30, LAN 10.N.x.0/24):", String(
+    /* suggest next unused site number */
+    (devices.map(d=>{const m=String(d.id).match(/^s(\d+)-/);return m?+m[1]:0;})
+      .reduce((a,b)=>Math.max(a,b),0)) + 1
+  ));
+  if(n===null) return;
+  if(!/^\d+$/.test(n.trim())){ setStatus("Site number must be a whole number.", true); return; }
+  const N = n.trim();
+  const stamped = JSON.parse(JSON.stringify(SITE_TEMPLATE).split("{N}").join(N));
+  const clash = stamped.filter(d=>byId[d.id]);
+  if(clash.length){ setStatus(`Site ${N} already exists (id "${clash[0].id}" in use). Pick another number.`, true); return; }
+  devices = [...devices, ...stamped];
+  render();
+  setStatus(`Site ${N} stamped from template: ${stamped.length} devices (cloud → router → SD-WAN → switch → AP/endpoints), addressing 100.127.${N}.0/30 + 10.${N}.x.0/24. Edit placeholders, then Export JSON.`);
+};
+
+$("sampleBtn").onclick = ()=>{
+  suppressDerived = false;
+  devices = JSON.parse(JSON.stringify(SAMPLE));
+  render();
+  setStatus(`Sample data loaded (${devices.length} demo devices). Press Clear or upload your own JSON to replace it.`);
+};
+
+/* start EMPTY — nothing renders until data is uploaded (or sample explicitly loaded) */
+render();
+</script>
+</body>
+</html>
